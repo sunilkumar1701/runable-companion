@@ -14,18 +14,18 @@
 .conversation-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   max-width: 100%;
 }
 
+/* User message: Aligned to the RIGHT */
 .conversation-row--user {
-  /* user message row */
-  flex-direction: row;
+  justify-content: flex-end;
 }
 
+/* Assistant message: Aligned to the LEFT */
 .conversation-row--assistant {
-  /* assistant message row */
-  flex-direction: row;
+  justify-content: flex-start;
 }
 
 .conversation-avatar {
@@ -45,6 +45,7 @@
   background-color: #d4c5b9;
   color: #ffffff;
   font-size: 12px;
+  order: 2; /* Place after the bubble on the right */
 }
 
 .conversation-avatar--assistant {
@@ -67,12 +68,14 @@
   padding: 10px 14px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
-  max-width: 88%;
+  max-width: 82%;
+  order: 1;
 }
 
 .conversation-bubble--assistant {
-  padding: 4px 4px;
+  padding: 2px 4px;
   flex: 1;
+  max-width: calc(100% - 36px);
 }
 
 .conversation-text {
@@ -80,3 +83,44 @@
   word-break: break-word;
 }
 
+/* Formatted Assistant Content */
+.assistant-content-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assistant-paragraph {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.assistant-ordered-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.assistant-section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.assistant-section-heading {
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+
+.assistant-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 2px;
+}
+
+.assistant-section-item {
+  line-height: 1.5;
+}

@@ -1,0 +1,127 @@
+.page-summary-card {
+  margin: 6px 16px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(45, 32, 22, 0.03);
+}
+
+.page-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-summary-icon {
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.page-summary-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.page-summary-url-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.page-summary-globe {
+  color: var(--accent-blue);
+  flex-shrink: 0;
+}
+
+.page-summary-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  min-width: 0;
+  overflow: hidden;
+  transition: color 0.12s;
+}
+
+.page-summary-url:hover,
+.page-summary-url:focus-visible {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+
+.page-summary-url-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-summary-ext-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.page-summary-inset {
+  background-color: var(--surface-soft);
+  border-radius: var(--radius-md);
+  padding: 13px 15px;
+}
+
+.page-summary-paragraph {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.page-summary-takeaways-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.page-summary-takeaways-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.page-summary-takeaways-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.page-summary-takeaway-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.page-summary-bullet {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.page-summary-takeaway-text {
+  word-break: break-word;
+}
+

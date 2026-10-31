@@ -6,6 +6,8 @@ import QuickActions from './components/QuickActions/QuickActions';
 import ChatComposer from './components/ChatComposer/ChatComposer';
 import SelectedContextCard from './components/SelectedContextCard/SelectedContextCard';
 import ConversationView from './components/ConversationView/ConversationView';
+import SummaryLoadingState from './components/PageSummary/SummaryLoadingState';
+import PageSummaryCard from './components/PageSummary/PageSummaryCard';
 import Toast, { useToast } from './components/Toast/Toast';
 
 import ArtifactsPage from './pages/ArtifactsPage';
@@ -19,20 +21,33 @@ import {
   getPendingContext,
   clearPendingContext,
   onContextChange,
+  getActiveTabInfo,
+  extractActivePageText,
 } from './services/browserApi';
 import { getAssistantResponse } from './services/mockRunableService';
+import { getPageSummary, getSummaryFollowUpResponse } from './services/mockSummaryService';
 
 import './components/Toast/Toast.css';
 
 export default function App() {
-  // Corrected for Phase 2 & 3: dropdown closed by default on fresh load
+  // Navigation & dropdown state (closed by default)
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePage, setActivePage] = useState('home');
+
+  // Selected-text context state (Phase 2)
   const [selectedContext, setSelectedContext] = useState(null);
+
+  // Page Summary state (Phase 4)
+  const [summaryState, setSummaryState] = useState({
+    status: 'idle', // 'idle' | 'loading' | 'completed'
+    data: null,
+  });
+
+  // Conversation messages state
   const [messages, setMessages] = useState([]);
   const [toast, showToast] = useToast();
 
-  // Load pending context on mount and listen for runtime changes
+  // Load pending context on mount and subscribe to changes
   useEffect(() => {
     let isMounted = true;
 
@@ -40,6 +55,7 @@ export default function App() {
       const payload = await getPendingContext();
       if (isMounted && payload && payload.selectedText) {
         setSelectedContext(payload);
+        setSummaryState({ status: 'idle', data: null });
         setActivePage('home');
       }
     }
@@ -50,6 +66,7 @@ export default function App() {
       if (isMounted) {
         if (newPayload && newPayload.selectedText) {
           setSelectedContext(newPayload);
+          setSummaryState({ status: 'idle', data: null });
           setActivePage('home');
         } else {
           setSelectedContext(null);
@@ -71,17 +88,18 @@ export default function App() {
     setMenuOpen(false);
   }, []);
 
-  // New Chat resets conversation, clears selected context, and returns to home
+  // New Chat resets all active contexts and returns to home
   const handleNewChat = useCallback(() => {
     setMenuOpen(false);
     setSelectedContext(null);
+    setSummaryState({ status: 'idle', data: null });
     setMessages([]);
     setActivePage('home');
     clearPendingContext();
     showToast('New chat started');
   }, [showToast]);
 
-  // Handle menu navigation and actions
+  // Handle menu navigation
   const handleMenuAction = useCallback(
     (action, targetPageId) => {
       setMenuOpen(false);
@@ -98,14 +116,53 @@ export default function App() {
     setActivePage('home');
   }, []);
 
-  // Closing the selected context card removes webpage context but preserves messages
+  // Remove selected context card without losing existing conversation messages
   const handleCloseSelectedContext = useCallback(() => {
     setSelectedContext(null);
     clearPendingContext();
     showToast('Webpage context removed');
   }, [showToast]);
 
-  // Sending a message
+  // Summarize This Page handler (Phase 4)
+  const handleSummarizeThisPage = useCallback(async () => {
+    if (summaryState.status === 'loading') return;
+
+    // Reset selection context and existing messages for a clean summary session
+    setSelectedContext(null);
+    clearPendingContext();
+    setMessages([]);
+    setSummaryState({ status: 'loading', data: null });
+
+    try {
+      // 1. Get actual active tab URL & title
+      const tabInfo = await getActiveTabInfo();
+
+      // 2. Safely read readable page text locally if available
+      const pageText = await extractActivePageText(tabInfo.id);
+
+      // 3. Generate deterministic local page summary
+      const summaryResult = await getPageSummary({
+        title: tabInfo.title,
+        url: tabInfo.url,
+        text: pageText,
+      });
+
+      setSummaryState({
+        status: 'completed',
+        data: summaryResult,
+      });
+    } catch (err) {
+      console.warn('Summarization fallback error:', err);
+      // Graceful fallback so demo is never blocked
+      const fallbackResult = await getPageSummary();
+      setSummaryState({
+        status: 'completed',
+        data: fallbackResult,
+      });
+    }
+  }, [summaryState.status]);
+
+  // Send message handler (supports both Ask with Runable & Summary follow-ups)
   const handleSendMessage = useCallback(
     async (text) => {
       const userMessage = {
@@ -117,8 +174,15 @@ export default function App() {
 
       setMessages((prev) => [...prev, userMessage]);
 
-      // Obtain deterministic dummy assistant response
-      const assistantReply = await getAssistantResponse(text, selectedContext);
+      let assistantReply;
+
+      if (summaryState.status === 'completed' && summaryState.data) {
+        // Summary follow-up response
+        assistantReply = await getSummaryFollowUpResponse(text, summaryState.data);
+      } else {
+        // Ask with Runable response
+        assistantReply = await getAssistantResponse(text, selectedContext);
+      }
 
       const assistantMessage = {
         id: `assistant_${Date.now()}`,
@@ -129,7 +193,7 @@ export default function App() {
 
       setMessages((prev) => [...prev, assistantMessage]);
     },
-    [selectedContext]
+    [selectedContext, summaryState]
   );
 
   const handleSignOut = useCallback(() => {
@@ -137,8 +201,15 @@ export default function App() {
     showToast('Signed out (Demo mode)');
   }, [showToast]);
 
-  // Determine whether to show selected conversation mode or regular welcome mode
-  const isConversationMode = Boolean(selectedContext || messages.length > 0);
+  // View state conditions
+  const isSummaryActive = summaryState.status !== 'idle';
+  const isSelectionActive = Boolean(selectedContext);
+  const hasMessages = messages.length > 0;
+
+  // Dynamic placeholder for composer
+  const composerPlaceholder = isSummaryActive
+    ? 'Ask a follow-up question...'
+    : 'Ask Runable anything...';
 
   return (
     <div className="flex flex-col h-full w-full relative overflow-hidden bg-[var(--panel-bg)]">
@@ -182,28 +253,51 @@ export default function App() {
         <AccountPage onBack={handleBackToHome} onSignOut={handleSignOut} />
       )}
 
-      {/* Primary Home / Chat View */}
+      {/* Main Home / Chat View */}
       {activePage === 'home' && (
         <>
           <main className="flex flex-col flex-1 min-h-0 overflow-y-auto main-scroll">
-            {isConversationMode ? (
+            {/* 1. Summary Workflow Active (Phase 4) */}
+            {isSummaryActive ? (
               <>
-                {/* Selected from webpage card */}
+                {/* Four quick action cards remain at top with Summarize active */}
+                <QuickActions
+                  onAction={showToast}
+                  onSummarize={handleSummarizeThisPage}
+                  activeAction="summarize"
+                />
+
+                {/* Progress banner shown during summarization */}
+                {summaryState.status === 'loading' && <SummaryLoadingState />}
+
+                {/* Page summary result card */}
+                {summaryState.status === 'completed' && (
+                  <>
+                    <PageSummaryCard summaryData={summaryState.data} />
+                    {/* Follow-up conversation */}
+                    <ConversationView messages={messages} />
+                  </>
+                )}
+              </>
+            ) : isSelectionActive || hasMessages ? (
+              /* 2. Ask with Runable Selection Workflow (Phase 2) */
+              <>
                 {selectedContext && (
                   <SelectedContextCard
                     context={selectedContext}
                     onClose={handleCloseSelectedContext}
                   />
                 )}
-
-                {/* Conversation area (shows messages only when user sends one) */}
                 <ConversationView messages={messages} />
               </>
             ) : (
+              /* 3. Normal Phase 1 Welcome & Quick Actions */
               <>
-                {/* Standard Phase 1 Home Welcome & 4 Quick Actions */}
                 <WelcomeSection />
-                <QuickActions onAction={showToast} />
+                <QuickActions
+                  onAction={showToast}
+                  onSummarize={handleSummarizeThisPage}
+                />
               </>
             )}
           </main>
@@ -212,11 +306,12 @@ export default function App() {
           <ChatComposer
             onSendMessage={handleSendMessage}
             showToast={showToast}
+            placeholder={composerPlaceholder}
           />
         </>
       )}
 
-      {/* Floating Demo Toasts */}
+      {/* Floating Demo Toast */}
       <Toast message={toast} />
     </div>
   );

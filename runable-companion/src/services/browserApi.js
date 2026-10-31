@@ -13,7 +13,6 @@ const isExtensionContext =
  */
 export async function getPendingContext() {
   if (!isExtensionContext) {
-    // Check localStorage fallback for local preview testing
     try {
       const saved = sessionStorage.getItem('runable_pending_selection');
       return saved ? JSON.parse(saved) : null;
@@ -90,6 +89,56 @@ export function onContextChange(callback) {
 }
 
 /**
+ * Retrieves the currently active browser tab information safely.
+ */
+export async function getActiveTabInfo() {
+  if (isExtensionContext && chrome.tabs?.query) {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      if (tab) {
+        return {
+          id: tab.id || null,
+          url: tab.url || '',
+          title: tab.title || '',
+        };
+      }
+    } catch (err) {
+      console.warn('Failed to query active tab:', err);
+    }
+  }
+
+  // Fallback for dev preview
+  return {
+    id: null,
+    url: 'https://example.com/ai-agents',
+    title: 'The future of AI agents | Blog',
+  };
+}
+
+/**
+ * Optionally extracts readable page text locally using minimal scripting access.
+ */
+export async function extractActivePageText(tabId) {
+  if (isExtensionContext && chrome.scripting?.executeScript && tabId) {
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: () => {
+          const body = document.body;
+          return body ? body.innerText.slice(0, 3000) : '';
+        },
+      });
+      if (results && results[0]?.result) {
+        return results[0].result;
+      }
+    } catch (err) {
+      console.warn('Could not extract page text (page might be protected):', err);
+    }
+  }
+  return '';
+}
+
+/**
  * Safely opens a URL in a new tab.
  */
 export function openExternalUrl(url) {
@@ -122,4 +171,3 @@ export function openShortcutSettings() {
     console.warn('Cannot open browser internal page directly:', err);
   }
 }
-

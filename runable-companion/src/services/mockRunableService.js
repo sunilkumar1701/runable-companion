@@ -1,11 +1,11 @@
 /**
  * Mock Runable Service
  *
- * Provides local deterministic replies for Phase 2 demo.
+ * Provides local deterministic replies for Ask with Runable demo.
  * Does not make any network requests or contact any AI models.
  */
 
-import { FIXED_DUMMY_RESPONSE } from '../data/mockResponses';
+import { ENRICHED_DUMMY_RESPONSE } from '../data/mockResponses';
 
 /**
  * Returns a deterministic dummy assistant reply for the submitted query.
@@ -15,12 +15,11 @@ import { FIXED_DUMMY_RESPONSE } from '../data/mockResponses';
  * @returns {Promise<{ content: string, timestamp: number }>}
  */
 export async function getAssistantResponse(userQuery, context = null) {
-  // Simulate minimal UI delay for natural feel (optional, but keep very brief)
-  await new Promise((resolve) => setTimeout(resolve, 150));
+  // Simulate minimal UI delay for natural feel
+  await new Promise((resolve) => setTimeout(resolve, 200));
 
   return {
-    content: FIXED_DUMMY_RESPONSE,
+    content: ENRICHED_DUMMY_RESPONSE,
     timestamp: Date.now(),
   };
 }
-

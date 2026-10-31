@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, Command, Bell, SunMoon, ExternalLink, Keyboard } from 'lucide-react';
+import { Settings, Bell, SunMoon, ExternalLink, Keyboard } from 'lucide-react';
 import MenuPageLayout from '../components/MenuPageLayout/MenuPageLayout';
 import { openShortcutSettings } from '../services/browserApi';
 
@@ -14,15 +14,15 @@ export default function SettingsPage({ onBack, showToast }) {
 
   return (
     <MenuPageLayout title="Settings" icon={Settings} onBack={onBack}>
-      <div className="space-y-4">
+      <div className="space-y-4 w-full max-w-full min-w-0">
         {/* Appearance Section */}
-        <div className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-3">
+        <div className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-3 min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
             <SunMoon size={16} />
             <span>Appearance (Demo)</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex flex-wrap items-center justify-between text-xs gap-2">
             <span className="text-[var(--text-secondary)]">Theme mode</span>
             <div className="inline-flex rounded-lg border border-[var(--border)] p-0.5 bg-[var(--surface-soft)]">
               {['light', 'dark', 'system'].map((mode) => (
@@ -47,18 +47,19 @@ export default function SettingsPage({ onBack, showToast }) {
         </div>
 
         {/* Notifications Section */}
-        <div className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-3">
+        <div className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-3 min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
             <Bell size={16} />
             <span>Notifications (Demo)</span>
           </div>
 
-          <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center justify-between text-xs gap-2">
             <span className="text-[var(--text-secondary)]">Show completion alerts</span>
             <button
               type="button"
               role="switch"
               aria-checked={notificationsEnabled}
+              aria-label="Toggle notifications"
               onClick={() => {
                 const nextState = !notificationsEnabled;
                 setNotificationsEnabled(nextState);
@@ -78,19 +79,19 @@ export default function SettingsPage({ onBack, showToast }) {
         </div>
 
         {/* Keyboard Shortcut Section (Phase 3) */}
-        <div className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-3">
+        <div className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-3 min-w-0">
           <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]">
             <Keyboard size={16} />
-            <span>Keyboard Shortcut (Phase 3)</span>
+            <span>Keyboard Shortcut</span>
           </div>
 
           <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
             Open the Runable Companion side panel from any active webpage with the configured shortcut:
           </p>
 
-          <div className="flex items-center justify-between p-2.5 bg-[var(--surface-soft)] rounded-lg text-xs">
+          <div className="flex items-center justify-between p-2.5 bg-[var(--surface-soft)] rounded-lg text-xs gap-2">
             <span className="text-[var(--text-secondary)]">Default shortcut</span>
-            <kbd className="px-2 py-1 bg-[var(--surface)] border border-[var(--border)] rounded-md font-mono text-[11px] font-semibold text-[var(--accent-brown)] shadow-xs">
+            <kbd className="px-2 py-1 bg-[var(--surface)] border border-[var(--border)] rounded-md font-mono text-[11px] font-semibold text-[var(--accent-brown)] shadow-xs shrink-0">
               Alt + Shift + R
             </kbd>
           </div>
@@ -98,9 +99,9 @@ export default function SettingsPage({ onBack, showToast }) {
           <div className="text-xs text-[var(--text-secondary)] space-y-1.5 pt-1">
             <p className="font-medium text-[var(--text-primary)]">How to customize this shortcut:</p>
             <ol className="list-decimal pl-4 space-y-1 text-[11px] text-[var(--text-muted)]">
-              <li>In Chrome, navigate to <code className="text-[var(--text-primary)] font-mono">chrome://extensions/shortcuts</code></li>
-              <li>In Edge, navigate to <code className="text-[var(--text-primary)] font-mono">edge://extensions/shortcuts</code></li>
-              <li>Find <strong>Runable Companion</strong> and assign your preferred key combination.</li>
+              <li>In Chrome: <code className="text-[var(--text-primary)] font-mono break-all">chrome://extensions/shortcuts</code></li>
+              <li>In Edge: <code className="text-[var(--text-primary)] font-mono break-all">edge://extensions/shortcuts</code></li>
+              <li>Find <strong>Runable Companion</strong> and assign your preferred shortcut.</li>
             </ol>
           </div>
 
@@ -121,4 +122,3 @@ export default function SettingsPage({ onBack, showToast }) {
     </MenuPageLayout>
   );
 }
-

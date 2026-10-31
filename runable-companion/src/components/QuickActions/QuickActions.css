@@ -50,6 +50,12 @@
   box-shadow: 0 2px 8px rgba(45, 32, 22, 0.06);
 }
 
+.quick-action-card--active {
+  background-color: #eee5d9;
+  border-color: #d8cabe;
+  box-shadow: 0 1px 4px rgba(45, 32, 22, 0.06);
+}
+
 .quick-action-icon {
   display: flex;
   align-items: center;

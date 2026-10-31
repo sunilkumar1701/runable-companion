@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Calendar, Check, Pause } from 'lucide-react';
+import { Clock, Calendar } from 'lucide-react';
 import MenuPageLayout from '../components/MenuPageLayout/MenuPageLayout';
 import { sampleScheduledTasks } from '../data/menuPagesData';
 
@@ -21,22 +21,22 @@ export default function ScheduledTasksPage({ onBack, showToast }) {
 
   return (
     <MenuPageLayout title="Scheduled tasks" icon={Clock} onBack={onBack}>
-      <div className="space-y-3">
-        <p className="text-xs text-[var(--text-secondary)] mb-4">
+      <div className="space-y-3 w-full max-w-full min-w-0">
+        <p className="text-xs text-[var(--text-secondary)] mb-3">
           Automations and recurring research workflows managed by Runable.
         </p>
 
         {tasks.map((task) => (
           <div
             key={task.id}
-            className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-2.5"
+            className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-2.5 min-w-0"
           >
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="text-sm font-medium text-[var(--text-primary)]">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-medium text-[var(--text-primary)] break-words">
                   {task.name}
                 </h3>
-                <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed break-words">
                   {task.description}
                 </p>
               </div>
@@ -46,8 +46,9 @@ export default function ScheduledTasksPage({ onBack, showToast }) {
                 type="button"
                 role="switch"
                 aria-checked={task.enabled}
+                aria-label={`Toggle ${task.name}`}
                 onClick={() => toggleTask(task.id)}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden mt-0.5 ${
                   task.enabled ? 'bg-[var(--accent-brown)]' : 'bg-[var(--border)]'
                 }`}
               >
@@ -59,12 +60,12 @@ export default function ScheduledTasksPage({ onBack, showToast }) {
               </button>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] pt-1 border-t border-[var(--border)]/60 text-[var(--text-muted)]">
-              <span className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center justify-between text-[11px] pt-1.5 border-t border-[var(--border)]/60 text-[var(--text-muted)] gap-2">
+              <span className="flex items-center gap-1 shrink-0">
                 <Calendar size={12} />
                 {task.cadence}
               </span>
-              <span className={task.enabled ? 'text-[var(--text-secondary)]' : 'text-gray-400'}>
+              <span className={`shrink-0 ${task.enabled ? 'text-[var(--text-secondary)] font-medium' : 'text-gray-400'}`}>
                 Next: {task.enabled ? task.nextRun : 'Paused'}
               </span>
             </div>
@@ -78,4 +79,3 @@ export default function ScheduledTasksPage({ onBack, showToast }) {
     </MenuPageLayout>
   );
 }
-

@@ -29,9 +29,9 @@ export default function NotetakerPage({ onBack, showToast }) {
 
   return (
     <MenuPageLayout title="Notetaker" icon={Contact} onBack={onBack}>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-[var(--text-secondary)]">
+      <div className="space-y-4 w-full max-w-full min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-[var(--text-secondary)] min-w-0 flex-1">
             Automated transcripts, meeting summaries, and action items.
           </p>
           <button
@@ -48,14 +48,15 @@ export default function NotetakerPage({ onBack, showToast }) {
         {showAddForm && (
           <form
             onSubmit={handleAddNote}
-            className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl space-y-2 shadow-xs"
+            className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl space-y-2.5 shadow-xs"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[var(--text-primary)]">Quick Note</span>
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-0.5"
+                aria-label="Cancel note"
               >
                 <X size={14} />
               </button>
@@ -72,13 +73,13 @@ export default function NotetakerPage({ onBack, showToast }) {
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="text-xs px-2.5 py-1 border border-[var(--border)] rounded-md text-[var(--text-secondary)]"
+                className="text-xs px-2.5 py-1 border border-[var(--border)] rounded-md text-[var(--text-secondary)] hover:bg-[var(--surface-soft)]"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="text-xs px-2.5 py-1 bg-[var(--accent-brown)] text-white rounded-md font-medium"
+                className="text-xs px-2.5 py-1 bg-[var(--accent-brown)] text-white rounded-md font-medium hover:opacity-90"
               >
                 Save
               </button>
@@ -90,25 +91,25 @@ export default function NotetakerPage({ onBack, showToast }) {
         {notes.map((note) => (
           <div
             key={note.id}
-            className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-2.5"
+            className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-2.5 min-w-0"
           >
             <div>
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] break-words">
                 {note.title}
               </h3>
               <div className="flex flex-wrap items-center gap-3 text-[11px] text-[var(--text-muted)] mt-1">
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 shrink-0">
                   <Calendar size={12} />
                   {note.date}
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 shrink-0">
                   <Users size={12} />
                   {note.participants}
                 </span>
               </div>
             </div>
 
-            <p className="text-xs text-[var(--text-secondary)] leading-relaxed bg-[var(--surface-soft)] p-2.5 rounded-lg">
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed bg-[var(--surface-soft)] p-2.5 rounded-lg break-words">
               {note.summary}
             </p>
 
@@ -118,7 +119,7 @@ export default function NotetakerPage({ onBack, showToast }) {
                   <CheckSquare size={12} />
                   Action items:
                 </div>
-                <ul className="text-xs text-[var(--text-secondary)] space-y-1 pl-4 list-disc">
+                <ul className="text-xs text-[var(--text-secondary)] space-y-1 pl-4 list-disc break-words">
                   {note.actionItems.map((item, idx) => (
                     <li key={idx}>{item}</li>
                   ))}
@@ -135,4 +136,3 @@ export default function NotetakerPage({ onBack, showToast }) {
     </MenuPageLayout>
   );
 }
-

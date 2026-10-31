@@ -8,7 +8,11 @@ import './ChatComposer.css';
  * Chat composer anchored to the bottom of the panel.
  * Includes multiline input, plus, agent selector, model selector, and microphone.
  */
-export default function ChatComposer({ onSendMessage, showToast }) {
+export default function ChatComposer({
+  onSendMessage,
+  showToast,
+  placeholder = 'Ask Runable anything...',
+}) {
   const [value, setValue] = useState('');
   const [agentOpen, setAgentOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
@@ -58,7 +62,7 @@ export default function ChatComposer({ onSendMessage, showToast }) {
         <textarea
           ref={textareaRef}
           className="composer-input"
-          placeholder="Ask Runable anything..."
+          placeholder={placeholder}
           value={value}
           onChange={handleInput}
           onKeyDown={handleKeyDown}
