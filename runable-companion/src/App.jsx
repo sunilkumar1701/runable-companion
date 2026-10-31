@@ -46,6 +46,7 @@ export default function App() {
   // Conversation messages state
   const [messages, setMessages] = useState([]);
   const [toast, showToast] = useToast();
+  const [composerPlaceholderOverride, setComposerPlaceholderOverride] = useState(null);
 
   // Load pending context on mount and subscribe to changes
   useEffect(() => {
@@ -94,6 +95,7 @@ export default function App() {
     setSelectedContext(null);
     setSummaryState({ status: 'idle', data: null });
     setMessages([]);
+    setComposerPlaceholderOverride(null);
     setActivePage('home');
     clearPendingContext();
     showToast('New chat started');
@@ -201,13 +203,27 @@ export default function App() {
     showToast('Signed out (Demo mode)');
   }, [showToast]);
 
+  const handleSelectTool = useCallback(
+    (tool) => {
+      if (tool?.prompt) {
+        setComposerPlaceholderOverride(tool.prompt + '...');
+      } else if (tool?.title) {
+        setComposerPlaceholderOverride(`Describe what you want Runable to build for ${tool.title}...`);
+      }
+      showToast(`Selected tool: ${tool.title}`);
+    },
+    [showToast]
+  );
+
   // View state conditions
   const isSummaryActive = summaryState.status !== 'idle';
   const isSelectionActive = Boolean(selectedContext);
   const hasMessages = messages.length > 0;
 
   // Dynamic placeholder for composer
-  const composerPlaceholder = isSummaryActive
+  const composerPlaceholder = composerPlaceholderOverride
+    ? composerPlaceholderOverride
+    : isSummaryActive
     ? 'Ask a follow-up question...'
     : 'Ask Runable anything...';
 
@@ -305,6 +321,7 @@ export default function App() {
                 <QuickActions
                   onAction={showToast}
                   onSummarize={handleSummarizeThisPage}
+                  onSelectTool={handleSelectTool}
                 />
               </>
             )}
@@ -314,6 +331,7 @@ export default function App() {
           <ChatComposer
             onSendMessage={handleSendMessage}
             showToast={showToast}
+            onNavigate={setActivePage}
             placeholder={composerPlaceholder}
           />
         </>

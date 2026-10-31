@@ -1,7 +1,8 @@
 .composer-wrapper {
   flex-shrink: 0;
-  padding: 8px 16px 16px;
+  padding: 8px 16px 14px;
   background: var(--panel-bg);
+  position: relative;
 }
 
 .composer {
@@ -11,6 +12,47 @@
   padding: 2px;
   display: flex;
   flex-direction: column;
+}
+
+/* Attached files chips inside composer */
+.composer-attachments-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 12px 2px;
+}
+
+.composer-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background-color: #f3efe9;
+  border: 1px solid #ede8e3;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: #171717;
+}
+
+.composer-attachment-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.composer-attachment-remove {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  color: #737373;
+  display: flex;
+  align-items: center;
+}
+
+.composer-attachment-remove:hover {
+  color: #171717;
 }
 
 .composer-input {
@@ -79,6 +121,11 @@
   background-color: var(--border);
 }
 
+.composer-btn--circle-active {
+  background-color: #261b14 !important;
+  color: #ffffff !important;
+}
+
 .composer-btn--send {
   background-color: var(--accent-brown);
   color: #ffffff;
@@ -128,4 +175,471 @@
 
 .composer-dropdown--right {
   right: 0;
+}
+
+/* ==========================================================================
+   Attachment Menu Popover (Reference Image 2)
+   Triggered by '+' button in composer toolbar
+   ========================================================================== */
+.composer-attach-wrap {
+  position: relative;
+}
+
+.attachment-menu-popover {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background-color: #ffffff;
+  border: 1px solid var(--border, #ede8e3);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.05);
+  padding: 8px 6px;
+  z-index: 60;
+  animation: composerMenuFadeUp 0.15s ease-out;
+  max-height: 310px;
+  overflow-y: auto;
+}
+
+.attachment-menu-section-header {
+  font-size: 12px;
+  font-weight: 500;
+  color: #686868;
+  padding: 6px 10px 4px;
+}
+
+.attachment-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.attachment-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.12s;
+  text-align: left;
+}
+
+.attachment-menu-item:hover {
+  background-color: #f7f4f1;
+}
+
+.attachment-menu-item--highlighted {
+  background-color: #f3efe9;
+}
+
+.attachment-menu-icon {
+  color: #404040;
+  flex-shrink: 0;
+}
+
+.attachment-menu-item-label {
+  font-size: 13.5px;
+  font-weight: 450;
+  color: #171717;
+}
+
+.attachment-menu-item--skill {
+  align-items: flex-start;
+  padding: 8px 10px;
+}
+
+.attachment-menu-skill-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.attachment-menu-skill-name {
+  font-size: 13px;
+  font-weight: 550;
+  color: #171717;
+}
+
+.attachment-menu-skill-desc {
+  font-size: 11.5px;
+  color: #686868;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+/* ==========================================================================
+   Sub-toolbar below chatbox matching Reference Images 1 & 2
+   Pills: "Choose project", "Plugins"
+   ========================================================================== */
+.composer-sub-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px 2px;
+  position: relative;
+  z-index: 40;
+}
+
+.composer-sub-btn-wrap {
+  position: relative;
+}
+
+.composer-sub-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-color: transparent;
+  color: #525252;
+  font-size: 13px;
+  font-weight: 450;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.composer-sub-btn:hover {
+  background-color: #ebe5df;
+  color: #171717;
+}
+
+.composer-sub-btn--active {
+  background-color: #ebe5df !important;
+  color: #171717 !important;
+}
+
+/* ==========================================================================
+   Project Dropdown (Reference Image 1)
+   OPENS UPWARDS TO AVOID HIDING BEHIND SCREEN
+   ========================================================================== */
+.project-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  top: auto;
+  width: 230px;
+  max-height: calc(100vh - 220px);
+  background-color: #ffffff;
+  border: 1px solid var(--border, #ede8e3);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.05);
+  padding: 6px;
+  z-index: 50;
+  animation: composerMenuFadeUp 0.15s ease-out;
+}
+
+.project-dropdown-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #171717;
+  cursor: pointer;
+  transition: background-color 0.12s;
+  text-align: left;
+}
+
+.project-dropdown-action-btn:hover {
+  background-color: #f7f4f1;
+}
+
+.project-dropdown-new-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+}
+
+.project-dropdown-new-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--border, #ede8e3);
+  border-radius: 6px;
+  font-size: 12.5px;
+  outline: none;
+  background: #faf8f5;
+  color: #171717;
+}
+
+.project-dropdown-new-input:focus {
+  border-color: #ded6cc;
+  background: #ffffff;
+}
+
+.project-dropdown-new-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.project-dropdown-confirm-btn,
+.project-dropdown-cancel-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid #ede8e3;
+  background: #faf8f5;
+  color: #525252;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.12s;
+}
+
+.project-dropdown-confirm-btn:hover:not(:disabled) {
+  background: #171717;
+  color: #ffffff;
+  border-color: #171717;
+}
+
+.project-dropdown-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.project-dropdown-cancel-btn:hover {
+  background: #f1ede8;
+}
+
+.project-dropdown-divider {
+  height: 1px;
+  background-color: var(--border, #ede8e3);
+  margin: 4px 6px;
+}
+
+.project-dropdown-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.project-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: #37352f;
+  cursor: pointer;
+  transition: background-color 0.12s;
+  text-align: left;
+}
+
+.project-dropdown-item:hover {
+  background-color: #f7f4f1;
+}
+
+.project-dropdown-item--selected {
+  font-weight: 500;
+  color: #171717;
+  background-color: #faf8f5;
+}
+
+.project-dropdown-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.project-dropdown-item-icon {
+  color: #8c827a;
+  flex-shrink: 0;
+}
+
+.project-dropdown-item-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-dropdown-item-check {
+  color: #171717;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Plugins Quick Dropdown (Reference Image 2)
+   OPENS UPWARDS TO AVOID HIDING BEHIND SCREEN
+   ========================================================================== */
+.plugins-quick-dropdown {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  top: auto;
+  width: 290px;
+  max-height: calc(100vh - 220px);
+  background-color: #ffffff;
+  border: 1px solid var(--border, #ede8e3);
+  border-radius: 16px;
+  box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.12), 0 8px 12px -6px rgba(0, 0, 0, 0.05);
+  padding: 12px 10px 8px;
+  z-index: 50;
+  animation: composerMenuFadeUp 0.15s ease-out;
+}
+
+.plugins-quick-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.plugins-quick-search-icon {
+  position: absolute;
+  left: 10px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.plugins-quick-search-input {
+  width: 100%;
+  padding: 7px 10px 7px 32px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #ede8e3);
+  background-color: #faf8f5;
+  font-size: 12.5px;
+  color: #171717;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.plugins-quick-search-input:focus {
+  border-color: #ded6cc;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(222, 214, 204, 0.35);
+}
+
+.plugins-quick-search-input::placeholder {
+  color: #a3a3a3;
+}
+
+.plugins-quick-section-header {
+  font-size: 12px;
+  color: #9ca3af;
+  padding: 6px 8px 4px;
+  font-weight: 450;
+}
+
+.plugins-quick-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 2px 0;
+}
+
+.plugins-quick-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.12s;
+  text-align: left;
+}
+
+.plugins-quick-item:hover {
+  background-color: #f7f4f1;
+}
+
+.plugins-quick-item-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.plugins-quick-item-name {
+  font-size: 13px;
+  color: #262626;
+  font-weight: 450;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.plugins-quick-empty {
+  padding: 14px 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.plugins-quick-divider {
+  height: 1px;
+  background-color: var(--border, #ede8e3);
+  margin: 6px 4px;
+}
+
+.plugins-quick-connect-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.12s;
+}
+
+.plugins-quick-connect-btn:hover {
+  background-color: #f7f4f1;
+}
+
+.plugins-quick-connect-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #171717;
+}
+
+.plugins-quick-connect-icon {
+  color: #525252;
+}
+
+.plugins-quick-connect-chevron {
+  color: #8c827a;
+}
+
+@keyframes composerMenuFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
