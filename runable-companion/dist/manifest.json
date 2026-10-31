@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Runable Companion",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Your AI-powered browser companion for summarizing pages, creating slides, reports, and more.",
   "icons": {
     "16": "icons/icon16.png",
@@ -24,10 +24,9 @@
     "scripting"
   ],
   "commands": {
-    "open-runable-panel": {
+    "open-runable-side-panel": {
       "suggested_key": {
-        "default": "Alt+Shift+R",
-        "mac": "Alt+Shift+R"
+        "default": "Alt+R"
       },
       "description": "Open Runable Companion side panel"
     }

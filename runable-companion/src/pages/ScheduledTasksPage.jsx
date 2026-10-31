@@ -1,81 +1,142 @@
 import { useState } from 'react';
-import { Clock, Calendar } from 'lucide-react';
-import MenuPageLayout from '../components/MenuPageLayout/MenuPageLayout';
-import { sampleScheduledTasks } from '../data/menuPagesData';
+import { ArrowLeft, Search, Clock, ChevronDown, Bell, Calendar, Plus } from 'lucide-react';
 
 export default function ScheduledTasksPage({ onBack, showToast }) {
-  const [tasks, setTasks] = useState(sampleScheduledTasks);
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [tasks, setTasks] = useState([]);
 
-  const toggleTask = (id) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id === id) {
-          const nextState = !t.enabled;
-          showToast(`Task "${t.name}" ${nextState ? 'enabled' : 'paused'} (Demo)`);
-          return { ...t, enabled: nextState };
-        }
-        return t;
-      })
-    );
+  const filterChips = ['All', 'Active', 'Paused', 'Completed'];
+
+  const handleCreateTask = () => {
+    if (showToast) showToast('Create scheduled task — demo placeholder');
   };
 
   return (
-    <MenuPageLayout title="Scheduled tasks" icon={Clock} onBack={onBack}>
-      <div className="space-y-3 w-full max-w-full min-w-0">
-        <p className="text-xs text-[var(--text-secondary)] mb-3">
-          Automations and recurring research workflows managed by Runable.
-        </p>
+    <div className="subpage-container">
+      {/* Top Row: Back button + Create button */}
+      <div className="subpage-top-bar">
+        <button
+          type="button"
+          onClick={onBack}
+          className="subpage-circle-btn"
+          aria-label="Back to home"
+          title="Back"
+        >
+          <ArrowLeft size={16} strokeWidth={2} />
+        </button>
 
-        {tasks.map((task) => (
-          <div
-            key={task.id}
-            className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-xs space-y-2.5 min-w-0"
+        <button
+          type="button"
+          onClick={handleCreateTask}
+          className="subpage-btn-primary"
+        >
+          <span>Create</span>
+          <ChevronDown size={14} />
+        </button>
+      </div>
+
+      {/* Main Scrollable Content Body */}
+      <div className="subpage-body main-scroll">
+        {/* Title & Subtitle */}
+        <div className="subpage-header-text">
+          <h1 className="subpage-title">Scheduled tasks</h1>
+          <p className="subpage-subtitle">
+            Ask Runable to schedule tasks, set reminders, or monitor for updates.
+          </p>
+        </div>
+
+        {/* Search Field */}
+        <div className="subpage-search-wrap">
+          <div className="subpage-search-icon">
+            <Search size={16} strokeWidth={2} />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search scheduled tasks"
+            className="subpage-search-input"
+          />
+        </div>
+
+        {/* Filter Chips */}
+        <div className="subpage-chips-row">
+          {filterChips.map((chip) => {
+            const isSelected = activeFilter === chip;
+            return (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => setActiveFilter(chip)}
+                className={`subpage-chip ${isSelected ? 'subpage-chip--active' : ''}`}
+              >
+                {chip}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Centered Empty State */}
+        <div className="subpage-empty-state">
+          <div className="subpage-empty-icon">
+            <Clock size={40} strokeWidth={1.7} />
+          </div>
+          <h2 className="subpage-empty-title">No scheduled tasks yet</h2>
+          <p className="subpage-empty-desc">
+            Schedule a task and Runable will run it for you automatically.
+          </p>
+          <button
+            type="button"
+            onClick={handleCreateTask}
+            className="subpage-btn-secondary"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-medium text-[var(--text-primary)] break-words">
-                  {task.name}
-                </h3>
-                <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed break-words">
-                  {task.description}
+            New Task
+          </button>
+        </div>
+
+        {/* Thin Divider */}
+        <div className="subpage-divider" />
+
+        {/* Suggestions Section */}
+        <div>
+          <h2 className="subpage-section-title">Suggestions</h2>
+
+          <div className="suggestions-list">
+            {/* Suggestion 1: Daily brief */}
+            <div className="suggestion-row">
+              <div className="suggestion-icon-wrap" style={{ color: '#e07a2a', backgroundColor: '#fef3eb' }}>
+                <Bell size={16} strokeWidth={2} />
+              </div>
+              <div className="suggestion-content">
+                <div className="suggestion-header-line">
+                  <span className="suggestion-title">Daily brief</span>
+                  <span className="suggestion-cadence">Weekdays at 8:00 AM</span>
+                </div>
+                <p className="suggestion-desc">
+                  Start each weekday with a summary of your calendar, unread email, and priorities.
                 </p>
               </div>
-
-              {/* Toggle switch */}
-              <button
-                type="button"
-                role="switch"
-                aria-checked={task.enabled}
-                aria-label={`Toggle ${task.name}`}
-                onClick={() => toggleTask(task.id)}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden mt-0.5 ${
-                  task.enabled ? 'bg-[var(--accent-brown)]' : 'bg-[var(--border)]'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                    task.enabled ? 'translate-x-4' : 'translate-x-0'
-                  }`}
-                />
-              </button>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between text-[11px] pt-1.5 border-t border-[var(--border)]/60 text-[var(--text-muted)] gap-2">
-              <span className="flex items-center gap-1 shrink-0">
-                <Calendar size={12} />
-                {task.cadence}
-              </span>
-              <span className={`shrink-0 ${task.enabled ? 'text-[var(--text-secondary)] font-medium' : 'text-gray-400'}`}>
-                Next: {task.enabled ? task.nextRun : 'Paused'}
-              </span>
+            {/* Suggestion 2: Weekly review */}
+            <div className="suggestion-row">
+              <div className="suggestion-icon-wrap" style={{ color: '#7c3aed', backgroundColor: '#f5f3ff' }}>
+                <Calendar size={16} strokeWidth={2} />
+              </div>
+              <div className="suggestion-content">
+                <div className="suggestion-header-line">
+                  <span className="suggestion-title">Weekly review</span>
+                  <span className="suggestion-cadence">Weekly at 4:00 PM</span>
+                </div>
+                <p className="suggestion-desc">
+                  Turn your recent work into a concise weekly update.
+                </p>
+              </div>
             </div>
           </div>
-        ))}
-
-        <div className="pt-2 text-center text-xs text-[var(--text-muted)]">
-          Local demo toggles only — no background cron is executed.
         </div>
       </div>
-    </MenuPageLayout>
+    </div>
   );
 }

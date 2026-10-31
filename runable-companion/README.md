@@ -24,7 +24,7 @@ Built using **React 19**, **Vite**, **Tailwind CSS v4**, and **Chrome Extension 
 - Clicking the `✕` on the **Selected from webpage** card clears active context and session storage while preserving already-sent conversation messages.
 
 ### Phase 3 — Keyboard Shortcut & Subpages
-- Configured Chromium command `open-runable-panel` mapped by default to **`Alt + Shift + R`**.
+- Configured Chromium command `open-runable-side-panel` mapped by default to **`Alt + R`**.
 - Opens the Runable Companion side panel from any focused webpage tab.
 - More Options dropdown closed by default on initial load; opens/closes via ellipsis button or Escape/outside click.
 - 6 complete in-extension subpages styled consistently with Tailwind CSS:
@@ -138,14 +138,14 @@ Creates the production distribution bundle in `dist/`.
 2. Enable **Developer mode** (toggle in upper right).
 3. Click **Load unpacked** (upper left).
 4. Select the `runable-companion/dist` folder.
-5. Click **Summarize this page** on the home screen or press **Alt + Shift + R**.
+5. Click **Summarize this page** on the home screen or press **Alt + R**.
 
 ### Microsoft Edge
 1. Navigate to `edge://extensions/`.
 2. Enable **Developer mode** (toggle in bottom left sidebar).
 3. Click **Load unpacked** (top).
 4. Select the `runable-companion/dist` folder.
-5. Click **Summarize this page** on the home screen or press **Alt + Shift + R**.
+5. Click **Summarize this page** on the home screen or press **Alt + R**.
 
 ---
 
@@ -154,7 +154,7 @@ Creates the production distribution bundle in `dist/`.
 - `sidePanel`: Grants access to `chrome.sidePanel.open` to programmatically open the companion panel on action clicks, context menu actions, and shortcut triggers.
 - `contextMenus`: Used to register the "Ask with Runable" entry on text selection (`contexts: ["selection"]`).
 - `storage`: Temporarily stores selected text, page titles, and source URLs in `chrome.storage.session` until consumed or cleared by the user.
-- `commands`: Declares the `open-runable-panel` keyboard shortcut trigger.
+- `commands`: Declares the `open-runable-side-panel` keyboard shortcut trigger.
 - `tabs`: Allows the service worker and side panel to identify active tab URLs, titles, and IDs.
 - `scripting`: Allows local in-browser reading of visible text on the active tab upon an explicit user click on "Summarize this page".
 
@@ -162,6 +162,7 @@ Creates the production distribution bundle in `dist/`.
 
 ## Keyboard Shortcut Configuration
 
-- **Default Shortcut:** `Alt + Shift + R`
+- **Default Shortcut:** `Alt + R`
+- **Why Alt + R:** Avoids conflicts with Microsoft Edge's built-in `Alt + Shift + R` (Read Aloud / Immersive Reader) and browser hard-reload `Ctrl + Shift + R`.
 - **To customize in Chrome:** Navigate to `chrome://extensions/shortcuts` and configure "Open Runable Companion side panel".
 - **To customize in Edge:** Navigate to `edge://extensions/shortcuts` and set your preferred shortcut.

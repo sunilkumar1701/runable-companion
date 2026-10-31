@@ -1,135 +1,210 @@
 import { useState } from 'react';
-import { Box, FileText, Presentation, LineChart, X } from 'lucide-react';
-import MenuPageLayout from '../components/MenuPageLayout/MenuPageLayout';
+import { ArrowLeft, Search, PlusCircle, X, FileText, Presentation, LineChart } from 'lucide-react';
 import { sampleArtifacts } from '../data/menuPagesData';
 
 export default function ArtifactsPage({ onBack, showToast }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All Artifacts');
+  const [artifactsList, setArtifactsList] = useState([]);
   const [selectedArtifact, setSelectedArtifact] = useState(null);
 
-  const getIcon = (type) => {
-    switch (type) {
-      case 'Presentation':
-        return <Presentation size={18} className="text-[var(--accent-orange)] shrink-0" />;
-      case 'Report':
-        return <LineChart size={18} className="text-[var(--accent-blue)] shrink-0" />;
-      default:
-        return <FileText size={18} className="text-[var(--accent-brown)] shrink-0" />;
-    }
+  const categories = ['All Artifacts', 'Images', 'Videos', 'Websites'];
+
+  const handleCreateArtifact = () => {
+    const newArt = {
+      id: `art-${Date.now()}`,
+      title: 'New Strategy Deck',
+      type: 'Presentation',
+      created: 'Just now',
+      status: 'Draft',
+      description: 'Auto-generated presentation deck from your active workspace discussion.',
+    };
+    setArtifactsList([newArt, ...artifactsList]);
+    if (showToast) showToast('Sample artifact created (Demo)');
   };
 
+  const filteredArtifacts = artifactsList.filter((art) => {
+    const matchesSearch =
+      art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      art.description.toLowerCase().includes(searchQuery.toLowerCase());
+    if (selectedCategory === 'All Artifacts') return matchesSearch;
+    if (selectedCategory === 'Images') return matchesSearch && art.type === 'Image';
+    if (selectedCategory === 'Videos') return matchesSearch && art.type === 'Video';
+    if (selectedCategory === 'Websites') return matchesSearch && art.type === 'Website';
+    return matchesSearch;
+  });
+
   return (
-    <MenuPageLayout title="Artifacts" icon={Box} onBack={onBack}>
-      <div className="space-y-3 w-full max-w-full min-w-0">
-        <p className="text-xs text-[var(--text-secondary)] mb-3">
-          Structured deliverables generated during your assistant workflows.
-        </p>
+    <div className="subpage-container">
+      {/* Top Bar with back navigation */}
+      <div className="subpage-top-bar">
+        <button
+          type="button"
+          onClick={onBack}
+          className="subpage-circle-btn"
+          aria-label="Back to home"
+          title="Back"
+        >
+          <ArrowLeft size={16} strokeWidth={2} />
+        </button>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-          {sampleArtifacts.map((art) => (
-            <div
-              key={art.id}
-              onClick={() => setSelectedArtifact(art)}
-              className="p-3.5 bg-[var(--surface)] border border-[var(--border)] rounded-xl hover:bg-[var(--surface-soft)] cursor-pointer transition-colors shadow-xs flex flex-col justify-between min-w-0"
+      {/* Scrollable Content Body */}
+      <div className="subpage-body main-scroll">
+        {/* Title & Subtitle */}
+        <div className="subpage-header-text">
+          <h1 className="subpage-title">Artifacts</h1>
+          <p className="subpage-subtitle">
+            Reports, slides, sheets, sites, and media Runable has made for you.
+          </p>
+        </div>
+
+        {/* Search Field */}
+        <div className="subpage-search-wrap">
+          <div className="subpage-search-icon">
+            <Search size={16} strokeWidth={2} />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search artifacts"
+            className="subpage-search-input"
+          />
+        </div>
+
+        {/* Category Chips */}
+        <div className="subpage-chips-row">
+          {categories.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={`subpage-chip ${isSelected ? 'subpage-chip--active' : ''}`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Content View: Empty State or Artifacts List */}
+        {filteredArtifacts.length === 0 ? (
+          <div className="subpage-empty-state">
+            {/* Centered Archive Tray Outline Icon */}
+            <div className="subpage-empty-icon">
+              <svg
+                width="50"
+                height="50"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 10a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-8Z" />
+                <path d="M4 14h4a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2h4" />
+                <path d="M7 6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2" />
+                <path d="M9 2h6" />
+              </svg>
+            </div>
+
+            <h2 className="subpage-empty-title">Your artifacts will live here</h2>
+            <p className="subpage-empty-desc">
+              Images, videos, websites, slides, and files from your chats will appear here.
+            </p>
+
+            <button
+              type="button"
+              onClick={handleCreateArtifact}
+              className="subpage-btn-primary"
             >
-              <div>
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {getIcon(art.type)}
-                    <h3 className="text-sm font-medium text-[var(--text-primary)] truncate">
-                      {art.title}
-                    </h3>
-                  </div>
-                  <span
-                    className={`text-[11px] font-medium px-2 py-0.5 rounded-full shrink-0 ${
-                      art.status === 'Ready'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
-                    }`}
-                  >
-                    {art.status}
-                  </span>
+              <PlusCircle size={14} strokeWidth={2} />
+              <span>Create artifact</span>
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {filteredArtifacts.map((art) => (
+              <div
+                key={art.id}
+                onClick={() => setSelectedArtifact(art)}
+                className="plugin-workspace-card"
+                style={{ cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', color: '#776b61' }}>{art.type}</span>
+                  <span style={{ fontSize: '11px', color: '#776b61' }}>{art.created}</span>
                 </div>
-
-                <p className="text-xs text-[var(--text-secondary)] line-clamp-2 mb-2">
+                <h3 style={{ fontSize: '13.5px', fontWeight: 600, color: '#171717', margin: '0 0 4px 0' }}>
+                  {art.title}
+                </h3>
+                <p style={{ fontSize: '12px', color: '#776b61', margin: 0, lineHeight: 1.4 }}>
                   {art.description}
                 </p>
               </div>
-
-              <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-2 border-t border-[var(--border)]/50">
-                <span>{art.type}</span>
-                <span>{art.created}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="pt-2 text-center text-xs text-[var(--text-muted)]">
-          Demo data only — no real files are stored.
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Artifact Local Detail Preview Modal */}
+      {/* Artifact Preview Modal (demo) */}
       {selectedArtifact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-5 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                {getIcon(selectedArtifact.type)}
-                <h4 className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                  {selectedArtifact.title}
-                </h4>
-              </div>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            zIndex: 50,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '16px',
+              padding: '20px',
+              width: '100%',
+              maxWidth: '380px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#776b61', textTransform: 'uppercase' }}>
+                {selectedArtifact.type}
+              </span>
               <button
                 type="button"
                 onClick={() => setSelectedArtifact(null)}
-                className="text-[var(--text-muted)] hover:text-[var(--text-primary)] p-1 rounded-md"
-                aria-label="Close preview"
+                style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#776b61' }}
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
-
-            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+            <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#171717', marginBottom: '8px' }}>
+              {selectedArtifact.title}
+            </h3>
+            <p style={{ fontSize: '12.5px', color: '#776b61', lineHeight: 1.5, marginBottom: '16px' }}>
               {selectedArtifact.description}
             </p>
-
-            <div className="p-3 bg-[var(--surface-soft)] rounded-lg text-xs space-y-1.5 border border-[var(--border)]/60">
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Type:</span>
-                <span className="font-medium text-[var(--text-primary)]">{selectedArtifact.type}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Status:</span>
-                <span className="font-medium text-[var(--text-primary)]">{selectedArtifact.status}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[var(--text-muted)]">Created:</span>
-                <span className="font-medium text-[var(--text-primary)]">{selectedArtifact.created}</span>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  showToast('Export — demo placeholder');
-                  setSelectedArtifact(null);
-                }}
-                className="px-3 py-1.5 text-xs font-medium bg-[var(--accent-brown)] text-white rounded-lg hover:opacity-90"
-              >
-                Export
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="button"
                 onClick={() => setSelectedArtifact(null)}
-                className="px-3 py-1.5 text-xs font-medium border border-[var(--border)] text-[var(--text-secondary)] rounded-lg hover:bg-[var(--surface-soft)]"
+                className="subpage-btn-primary"
               >
-                Close
+                Close Preview
               </button>
             </div>
           </div>
         </div>
       )}
-    </MenuPageLayout>
+    </div>
   );
 }

@@ -213,19 +213,22 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full w-full relative overflow-hidden bg-[var(--panel-bg)]">
-      {/* Shared Header */}
-      <Header
-        onNewChat={handleNewChat}
-        onToggleMenu={handleToggleMenu}
-        menuOpen={menuOpen}
-      />
+      {/* Top Navigation Header & More Options Menu (Home only) */}
+      {activePage === 'home' && (
+        <>
+          <Header
+            onNewChat={handleNewChat}
+            onToggleMenu={handleToggleMenu}
+            menuOpen={menuOpen}
+          />
 
-      {/* More Options Dropdown */}
-      {menuOpen && (
-        <MoreOptionsMenu
-          onClose={handleCloseMenu}
-          onAction={handleMenuAction}
-        />
+          {menuOpen && (
+            <MoreOptionsMenu
+              onClose={handleCloseMenu}
+              onAction={handleMenuAction}
+            />
+          )}
+        </>
       )}
 
       {/* Subpages routed from More Options */}
@@ -242,15 +245,20 @@ export default function App() {
       )}
 
       {activePage === 'notetaker' && (
-        <NotetakerPage onBack={handleBackToHome} showToast={showToast} />
+        <NotetakerPage onBack={handleBackToHome} showToast={showToast} onNavigate={setActivePage} />
       )}
 
       {activePage === 'settings' && (
-        <SettingsPage onBack={handleBackToHome} showToast={showToast} />
+        <SettingsPage onBack={handleBackToHome} showToast={showToast} onNavigate={setActivePage} />
       )}
 
       {activePage === 'account' && (
-        <AccountPage onBack={handleBackToHome} onSignOut={handleSignOut} />
+        <AccountPage
+          onBack={handleBackToHome}
+          onSignOut={handleSignOut}
+          showToast={showToast}
+          onNavigate={setActivePage}
+        />
       )}
 
       {/* Main Home / Chat View */}

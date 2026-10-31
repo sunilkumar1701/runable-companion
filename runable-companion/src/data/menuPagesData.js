@@ -96,7 +96,7 @@ export const sampleNotes = [
       'Reviewed Chromium extension side panel architecture and Manifest V3 compatibility. Decided on local session storage for context passing and pure CSS design tokens for UI consistency.',
     actionItems: [
       'Finalize Phase 2 context-menu handler with storage.session fallback',
-      'Configure Alt + Shift + R command in manifest.json and test across Chrome/Edge',
+      'Configure Alt + R command in manifest.json and test across Chrome/Edge',
       'Verify responsive layout down to 320px minimum viewport width',
     ],
   },
@@ -115,8 +115,9 @@ export const sampleNotes = [
 ];
 
 export const defaultAccountData = {
-  name: 'Sunil',
-  email: 'sunil@example.com',
+  name: 'Sunil kumar',
+  email: 'sunilprakash1701@gmail.com',
+  credits: '0 left',
   plan: 'Demo Account (Phase 2 & 3)',
   joined: 'October 2026',
 };
