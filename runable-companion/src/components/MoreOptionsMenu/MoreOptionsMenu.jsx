@@ -5,14 +5,14 @@ import './MoreOptionsMenu.css';
 /**
  * Floating more-options dropdown anchored below the ellipsis button.
  */
-export default function MoreOptionsMenu({ onClose, onAction, showToast }) {
+export default function MoreOptionsMenu({ onClose, onAction }) {
   const ref = useOutsideClick(onClose, true);
 
   function handleClick(item) {
-    if (item.action === 'reset') {
-      onAction('reset');
+    if (item.id === 'new-chat') {
+      onAction('new-chat');
     } else {
-      showToast(`${item.label} — demo placeholder`);
+      onAction('navigate', item.id);
     }
     onClose();
   }
@@ -45,4 +45,3 @@ export default function MoreOptionsMenu({ onClose, onAction, showToast }) {
     </div>
   );
 }
-

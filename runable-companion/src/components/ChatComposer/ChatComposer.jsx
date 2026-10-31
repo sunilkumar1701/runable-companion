@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Plus, Mic, ChevronDown, Smile } from 'lucide-react';
+import { Plus, Mic, ChevronDown, Smile, Send } from 'lucide-react';
 import Dropdown from '../Dropdown/Dropdown';
 import { agentOptions, modelOptions } from '../../data/demoData';
 import './ChatComposer.css';
@@ -8,7 +8,7 @@ import './ChatComposer.css';
  * Chat composer anchored to the bottom of the panel.
  * Includes multiline input, plus, agent selector, model selector, and microphone.
  */
-export default function ChatComposer({ showToast }) {
+export default function ChatComposer({ onSendMessage, showToast }) {
   const [value, setValue] = useState('');
   const [agentOpen, setAgentOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
@@ -16,26 +16,34 @@ export default function ChatComposer({ showToast }) {
   const [selectedModel, setSelectedModel] = useState('auto');
   const textareaRef = useRef(null);
 
+  const handleSend = useCallback(() => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    if (onSendMessage) {
+      onSendMessage(trimmed);
+    } else if (showToast) {
+      showToast(`Demo message: "${trimmed.slice(0, 60)}"`);
+    }
+
+    setValue('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  }, [value, onSendMessage, showToast]);
+
   const handleKeyDown = useCallback(
     (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        if (value.trim()) {
-          showToast(`Demo message: "${value.trim().slice(0, 60)}"`);
-          setValue('');
-          // Reset textarea height
-          if (textareaRef.current) {
-            textareaRef.current.style.height = 'auto';
-          }
-        }
+        handleSend();
       }
     },
-    [value, showToast]
+    [handleSend]
   );
 
   const handleInput = (e) => {
     setValue(e.target.value);
-    // Auto-resize textarea
     const el = e.target;
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
@@ -61,8 +69,9 @@ export default function ChatComposer({ showToast }) {
         <div className="composer-toolbar">
           {/* Plus button */}
           <button
+            type="button"
             className="composer-btn composer-btn--circle"
-            onClick={() => showToast('Attach — demo placeholder')}
+            onClick={() => showToast && showToast('Attach — demo placeholder')}
             aria-label="Add attachment"
             title="Add attachment"
           >
@@ -72,6 +81,7 @@ export default function ChatComposer({ showToast }) {
           {/* Agent selector */}
           <div className="composer-selector-wrap">
             <button
+              type="button"
               className="composer-btn composer-btn--pill"
               onClick={() => {
                 setAgentOpen(!agentOpen);
@@ -101,6 +111,7 @@ export default function ChatComposer({ showToast }) {
           {/* Model selector */}
           <div className="composer-selector-wrap">
             <button
+              type="button"
               className="composer-btn composer-btn--compact"
               onClick={() => {
                 setModelOpen(!modelOpen);
@@ -124,18 +135,30 @@ export default function ChatComposer({ showToast }) {
             )}
           </div>
 
-          {/* Microphone button */}
-          <button
-            className="composer-btn composer-btn--circle"
-            onClick={() => showToast('Voice input — demo placeholder')}
-            aria-label="Voice input"
-            title="Voice input"
-          >
-            <Mic size={18} strokeWidth={2} />
-          </button>
+          {/* Send or Microphone button */}
+          {value.trim() ? (
+            <button
+              type="button"
+              className="composer-btn composer-btn--circle composer-btn--send"
+              onClick={handleSend}
+              aria-label="Send message"
+              title="Send message"
+            >
+              <Send size={16} strokeWidth={2} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="composer-btn composer-btn--circle"
+              onClick={() => showToast && showToast('Voice input — demo placeholder')}
+              aria-label="Voice input"
+              title="Voice input"
+            >
+              <Mic size={18} strokeWidth={2} />
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
-

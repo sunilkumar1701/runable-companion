@@ -1,0 +1,82 @@
+.conversation-view {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 20px;
+  flex: 1;
+}
+
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.conversation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 100%;
+}
+
+.conversation-row--user {
+  /* user message row */
+  flex-direction: row;
+}
+
+.conversation-row--assistant {
+  /* assistant message row */
+  flex-direction: row;
+}
+
+.conversation-avatar {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.conversation-avatar--user {
+  border-radius: var(--radius-full);
+  background-color: #d4c5b9;
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.conversation-avatar--assistant {
+  border-radius: 6px;
+  background-color: var(--surface-soft);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.conversation-bubble {
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
+.conversation-bubble--user {
+  background-color: var(--surface-soft);
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  max-width: 88%;
+}
+
+.conversation-bubble--assistant {
+  padding: 4px 4px;
+  flex: 1;
+}
+
+.conversation-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+

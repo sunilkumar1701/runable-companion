@@ -1,0 +1,113 @@
+.selected-context-card {
+  margin: 14px 16px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 1px 3px rgba(45, 32, 22, 0.03);
+}
+
+.selected-context-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.selected-context-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selected-context-doc-icon {
+  color: var(--text-primary);
+  flex-shrink: 0;
+}
+
+.selected-context-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.selected-context-close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.12s, color 0.12s;
+  padding: 0;
+}
+
+.selected-context-close-btn:hover,
+.selected-context-close-btn:focus-visible {
+  background-color: var(--surface-soft);
+  color: var(--text-primary);
+}
+
+.selected-context-body {
+  background-color: var(--surface-soft);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.selected-context-text {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.selected-context-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.selected-context-globe-icon {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.selected-context-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  min-width: 0;
+  overflow: hidden;
+  transition: color 0.12s;
+}
+
+.selected-context-url:hover,
+.selected-context-url:focus-visible {
+  color: var(--accent-blue);
+  text-decoration: underline;
+}
+
+.selected-context-url-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-context-ext-icon {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+

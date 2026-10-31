@@ -79,6 +79,17 @@
   background-color: var(--border);
 }
 
+.composer-btn--send {
+  background-color: var(--accent-brown);
+  color: #ffffff;
+}
+
+.composer-btn--send:hover,
+.composer-btn--send:focus-visible {
+  background-color: #261b14;
+  color: #ffffff;
+}
+
 .composer-btn--pill {
   padding: 6px 12px;
   border-radius: var(--radius-full);
