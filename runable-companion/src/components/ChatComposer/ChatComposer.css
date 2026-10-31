@@ -1,0 +1,120 @@
+.composer-wrapper {
+  flex-shrink: 0;
+  padding: 8px 16px 16px;
+  background: var(--panel-bg);
+}
+
+.composer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 2px;
+  display: flex;
+  flex-direction: column;
+}
+
+.composer-input {
+  width: 100%;
+  padding: 14px 16px 6px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  min-height: 40px;
+  max-height: 120px;
+}
+
+.composer-input::placeholder {
+  color: var(--text-muted);
+}
+
+.composer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.composer-spacer {
+  flex: 1;
+  min-width: 8px;
+}
+
+.composer-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.12s, color 0.12s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.composer-btn:hover,
+.composer-btn:focus-visible {
+  color: var(--text-primary);
+}
+
+.composer-btn--circle {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--surface-soft);
+}
+
+.composer-btn--circle:hover,
+.composer-btn--circle:focus-visible {
+  background-color: var(--border);
+}
+
+.composer-btn--pill {
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  background: var(--surface-soft);
+  font-weight: 500;
+}
+
+.composer-btn--pill:hover,
+.composer-btn--pill:focus-visible {
+  background-color: var(--border);
+}
+
+.composer-btn--compact {
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.composer-btn--compact:hover,
+.composer-btn--compact:focus-visible {
+  background-color: var(--surface-soft);
+}
+
+.composer-selector-wrap {
+  position: relative;
+}
+
+.composer-dropdown {
+  bottom: 100%;
+  margin-bottom: 6px;
+}
+
+.composer-dropdown--left {
+  left: 0;
+}
+
+.composer-dropdown--right {
+  right: 0;
+}

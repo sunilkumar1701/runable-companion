@@ -1,0 +1,31 @@
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px 28px;
+  flex: 1;
+  min-height: 0;
+}
+
+.welcome-sparkle {
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  opacity: 0.8;
+}
+
+.welcome-heading {
+  font-size: clamp(20px, 4.5vw, 26px);
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.welcome-subtext {
+  font-size: clamp(13px, 2.8vw, 15px);
+  color: var(--text-muted);
+  font-weight: 400;
+}
