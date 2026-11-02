@@ -1,11 +1,52 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Plus, Mic, ChevronDown, Smile, Send, Folder, Paperclip, X } from 'lucide-react';
-import Dropdown from '../Dropdown/Dropdown';
+import {
+  Plus,
+  Mic,
+  ChevronDown,
+  Smile,
+  Send,
+  Folder,
+  Paperclip,
+  X,
+  MessageSquare,
+} from 'lucide-react';
+import AgentDropdown from './AgentDropdown';
+import ModelDropdown from './ModelDropdown';
+import VoiceRecordingUI from './VoiceRecordingUI';
 import ProjectDropdown from './ProjectDropdown';
 import PluginsQuickDropdown from './PluginsQuickDropdown';
 import AttachmentMenu from './AttachmentMenu';
-import { agentOptions, modelOptions, initialProjects } from '../../data/demoData';
+import {
+  agentModes,
+  modelChoices,
+  agentOptions,
+  modelOptions,
+  initialProjects,
+} from '../../data/demoData';
 import './ChatComposer.css';
+
+/**
+ * 4-bar Plan icon for composer pill matching Reference Image 1.
+ */
+function PlanFourBarsIcon({ size = 16, className = '' }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      className={className}
+    >
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="4" y1="10.5" x2="20" y2="10.5" />
+      <line x1="4" y1="15" x2="20" y2="15" />
+      <line x1="4" y1="19.5" x2="20" y2="19.5" />
+    </svg>
+  );
+}
 
 /**
  * Interlocking Link/Plug icon matching Reference Images 1 & 2 for Plugins.
@@ -33,8 +74,11 @@ function InterlockingLinkIcon({ size = 14, className = '' }) {
  * Chat composer anchored to the bottom of the panel.
  * Includes:
  * 1. Main composer textarea with toolbar (+, Agent, Auto, Mic/Send)
- * 2. Attachment Menu popover matching Reference Image 2 (replaces toast on '+' click)
- * 3. Bottom sub-toolbar with "Choose project" and "Plugins" pills (Reference Images 1 & 2)
+ * 2. Agent dropdown matching Reference Image 1 with Ctrl+Shift+A shortcut
+ * 3. Model dropdown matching Reference Image 2 (Auto + Pro models)
+ * 4. Voice Recording UI matching Reference Image 3 (animated waveform + confirm/cancel)
+ * 5. Attachment Menu popover matching Reference Image 2
+ * 6. Bottom sub-toolbar with "Choose project" and "Plugins" pills
  */
 export default function ChatComposer({
   onSendMessage,
@@ -47,18 +91,42 @@ export default function ChatComposer({
   const [modelOpen, setModelOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState('agent');
   const [selectedModel, setSelectedModel] = useState('auto');
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
   const textareaRef = useRef(null);
+  const agentWrapRef = useRef(null);
+  const modelWrapRef = useRef(null);
 
-  // Attachment Menu state (Reference Image 2)
+  // Attachment Menu state
   const [attachmentMenuOpen, setAttachmentMenuOpen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState([]);
   const attachWrapRef = useRef(null);
 
-  // Sub-toolbar state for "Choose project" and "Plugins" (Reference Image 1)
+  // Sub-toolbar state for "Choose project" and "Plugins"
   const [activeSubMenu, setActiveSubMenu] = useState(null); // 'project' | 'plugins' | null
   const [projects, setProjects] = useState(initialProjects);
   const [selectedProject, setSelectedProject] = useState(null);
   const subToolbarRef = useRef(null);
+
+  // Global key listener for Ctrl+Shift+A (Switch Agent Mode)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setSelectedAgent((prev) => {
+          const modes = ['agent', 'ask', 'plan'];
+          const nextIdx = (modes.indexOf(prev) + 1) % modes.length;
+          const nextMode = modes[nextIdx];
+          if (showToast) {
+            const label = nextMode.charAt(0).toUpperCase() + nextMode.slice(1);
+            showToast(`Switched mode: ${label}`);
+          }
+          return nextMode;
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showToast]);
 
   // Close menus on click outside
   useEffect(() => {
@@ -69,15 +137,21 @@ export default function ChatComposer({
       if (attachWrapRef.current && !attachWrapRef.current.contains(event.target)) {
         setAttachmentMenuOpen(false);
       }
+      if (agentWrapRef.current && !agentWrapRef.current.contains(event.target)) {
+        setAgentOpen(false);
+      }
+      if (modelWrapRef.current && !modelWrapRef.current.contains(event.target)) {
+        setModelOpen(false);
+      }
     }
 
-    if (activeSubMenu || attachmentMenuOpen) {
+    if (activeSubMenu || attachmentMenuOpen || agentOpen || modelOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [activeSubMenu, attachmentMenuOpen]);
+  }, [activeSubMenu, attachmentMenuOpen, agentOpen, modelOpen]);
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
@@ -99,6 +173,20 @@ export default function ChatComposer({
       textareaRef.current.style.height = 'auto';
     }
   }, [value, attachedFiles, onSendMessage, showToast]);
+
+  const handleVoiceConfirm = useCallback(
+    (speechText) => {
+      setIsVoiceRecording(false);
+      if (speechText && speechText.trim()) {
+        if (onSendMessage) {
+          onSendMessage(speechText.trim());
+        } else if (showToast) {
+          showToast(`Voice message: "${speechText.slice(0, 60)}"`);
+        }
+      }
+    },
+    [onSendMessage, showToast]
+  );
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -174,161 +262,189 @@ export default function ChatComposer({
     }
   };
 
-  const currentAgent = agentOptions.find((a) => a.id === selectedAgent);
-  const currentModel = modelOptions.find((m) => m.id === selectedModel);
+  const currentAgent = agentModes.find((a) => a.id === selectedAgent) || agentModes[0];
+  const currentModelLabel =
+    selectedModel === 'auto'
+      ? 'Auto'
+      : modelChoices.list.find((m) => m.id === selectedModel)?.name || 'Auto';
+
+  // Render icon for the active agent mode
+  const renderAgentIcon = (modeId) => {
+    if (modeId === 'ask') return <MessageSquare size={16} strokeWidth={1.8} />;
+    if (modeId === 'plan') return <PlanFourBarsIcon size={16} />;
+    return <Smile size={16} strokeWidth={1.8} />;
+  };
 
   return (
     <div className="composer-wrapper">
       {/* Main Composer Box */}
       <div className="composer">
-        {/* Attached files preview chips */}
-        {attachedFiles.length > 0 && (
-          <div className="composer-attachments-row">
-            {attachedFiles.map((file, idx) => (
-              <div key={idx} className="composer-attachment-chip">
-                <Paperclip size={12} strokeWidth={2} />
-                <span className="composer-attachment-name">{file.name}</span>
+        {/* Voice recording state matching Reference Image 3 */}
+        {isVoiceRecording ? (
+          <VoiceRecordingUI
+            onConfirm={handleVoiceConfirm}
+            onCancel={() => setIsVoiceRecording(false)}
+          />
+        ) : (
+          <>
+            {/* Attached files preview chips */}
+            {attachedFiles.length > 0 && (
+              <div className="composer-attachments-row">
+                {attachedFiles.map((file, idx) => (
+                  <div key={idx} className="composer-attachment-chip">
+                    <Paperclip size={12} strokeWidth={2} />
+                    <span className="composer-attachment-name">{file.name}</span>
+                    <button
+                      type="button"
+                      className="composer-attachment-remove"
+                      onClick={() => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                      title="Remove attachment"
+                    >
+                      <X size={12} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <textarea
+              ref={textareaRef}
+              className="composer-input"
+              placeholder={placeholder}
+              value={value}
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              aria-label="Chat message input"
+            />
+
+            <div className="composer-toolbar">
+              {/* Plus button + Attachment Menu (Reference Image 2) */}
+              <div className="composer-attach-wrap" ref={attachWrapRef}>
                 <button
                   type="button"
-                  className="composer-attachment-remove"
-                  onClick={() => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))}
-                  title="Remove attachment"
+                  className={`composer-btn composer-btn--circle ${
+                    attachmentMenuOpen ? 'composer-btn--circle-active' : ''
+                  }`}
+                  onClick={() => {
+                    setAttachmentMenuOpen((prev) => !prev);
+                    setAgentOpen(false);
+                    setModelOpen(false);
+                    setActiveSubMenu(null);
+                  }}
+                  aria-label="Add attachment"
+                  aria-expanded={attachmentMenuOpen}
+                  title="Add attachment"
                 >
-                  <X size={12} strokeWidth={2.5} />
+                  <Plus size={18} strokeWidth={2} />
                 </button>
+
+                {attachmentMenuOpen && (
+                  <AttachmentMenu
+                    onAttachFile={(file) => {
+                      setAttachedFiles((prev) => [...prev, file]);
+                      setAttachmentMenuOpen(false);
+                    }}
+                    onSelectAction={handleAttachmentAction}
+                    onClose={() => setAttachmentMenuOpen(false)}
+                  />
+                )}
               </div>
-            ))}
-          </div>
+
+              {/* Agent selector matching Reference Image 1 */}
+              <div className="composer-selector-wrap" ref={agentWrapRef}>
+                <button
+                  type="button"
+                  className="composer-btn composer-btn--pill"
+                  onClick={() => {
+                    setAgentOpen(!agentOpen);
+                    setModelOpen(false);
+                    setActiveSubMenu(null);
+                    setAttachmentMenuOpen(false);
+                  }}
+                  aria-label="Select agent mode"
+                  aria-expanded={agentOpen}
+                  aria-haspopup="menu"
+                >
+                  {renderAgentIcon(selectedAgent)}
+                  <span>{currentAgent.label}</span>
+                  <ChevronDown size={14} strokeWidth={2} />
+                </button>
+                {agentOpen && (
+                  <AgentDropdown
+                    selected={selectedAgent}
+                    onSelect={(id) => {
+                      setSelectedAgent(id);
+                      setAgentOpen(false);
+                    }}
+                    onClose={() => setAgentOpen(false)}
+                  />
+                )}
+              </div>
+
+              <div className="composer-spacer" />
+
+              {/* Model selector matching Reference Image 2 */}
+              <div className="composer-selector-wrap" ref={modelWrapRef}>
+                <button
+                  type="button"
+                  className="composer-btn composer-btn--compact"
+                  onClick={() => {
+                    setModelOpen(!modelOpen);
+                    setAgentOpen(false);
+                    setActiveSubMenu(null);
+                    setAttachmentMenuOpen(false);
+                  }}
+                  aria-label="Select model"
+                  aria-expanded={modelOpen}
+                  aria-haspopup="menu"
+                >
+                  <span>{currentModelLabel}</span>
+                  <ChevronDown size={14} strokeWidth={2} />
+                </button>
+                {modelOpen && (
+                  <ModelDropdown
+                    selected={selectedModel}
+                    onSelect={(id) => {
+                      setSelectedModel(id);
+                      setModelOpen(false);
+                    }}
+                    onClose={() => setModelOpen(false)}
+                  />
+                )}
+              </div>
+
+              {/* Send or Microphone button (Mic enters Voice UI - Reference Image 3) */}
+              {value.trim() || attachedFiles.length > 0 ? (
+                <button
+                  type="button"
+                  className="composer-btn composer-btn--circle composer-btn--send"
+                  onClick={handleSend}
+                  aria-label="Send message"
+                  title="Send message"
+                >
+                  <Send size={16} strokeWidth={2} />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="composer-btn composer-btn--circle"
+                  onClick={() => {
+                    setIsVoiceRecording(true);
+                    setAgentOpen(false);
+                    setModelOpen(false);
+                    setActiveSubMenu(null);
+                    setAttachmentMenuOpen(false);
+                  }}
+                  aria-label="Voice input"
+                  title="Voice input"
+                >
+                  <Mic size={18} strokeWidth={2} />
+                </button>
+              )}
+            </div>
+          </>
         )}
-
-        <textarea
-          ref={textareaRef}
-          className="composer-input"
-          placeholder={placeholder}
-          value={value}
-          onChange={handleInput}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          aria-label="Chat message input"
-        />
-
-        <div className="composer-toolbar">
-          {/* Plus button + Attachment Menu (Reference Image 2) - NO TOAST */}
-          <div className="composer-attach-wrap" ref={attachWrapRef}>
-            <button
-              type="button"
-              className={`composer-btn composer-btn--circle ${
-                attachmentMenuOpen ? 'composer-btn--circle-active' : ''
-              }`}
-              onClick={() => {
-                setAttachmentMenuOpen((prev) => !prev);
-                setAgentOpen(false);
-                setModelOpen(false);
-                setActiveSubMenu(null);
-              }}
-              aria-label="Add attachment"
-              aria-expanded={attachmentMenuOpen}
-              title="Add attachment"
-            >
-              <Plus size={18} strokeWidth={2} />
-            </button>
-
-            {attachmentMenuOpen && (
-              <AttachmentMenu
-                onAttachFile={(file) => {
-                  setAttachedFiles((prev) => [...prev, file]);
-                  setAttachmentMenuOpen(false);
-                }}
-                onSelectAction={handleAttachmentAction}
-                onClose={() => setAttachmentMenuOpen(false)}
-              />
-            )}
-          </div>
-
-          {/* Agent selector */}
-          <div className="composer-selector-wrap">
-            <button
-              type="button"
-              className="composer-btn composer-btn--pill"
-              onClick={() => {
-                setAgentOpen(!agentOpen);
-                setModelOpen(false);
-                setActiveSubMenu(null);
-                setAttachmentMenuOpen(false);
-              }}
-              aria-label="Select agent"
-              aria-expanded={agentOpen}
-              aria-haspopup="listbox"
-            >
-              <Smile size={16} strokeWidth={1.8} />
-              <span>{currentAgent?.label}</span>
-              <ChevronDown size={14} strokeWidth={2} />
-            </button>
-            {agentOpen && (
-              <Dropdown
-                options={agentOptions}
-                selected={selectedAgent}
-                onSelect={setSelectedAgent}
-                onClose={() => setAgentOpen(false)}
-                className="composer-dropdown composer-dropdown--left"
-              />
-            )}
-          </div>
-
-          <div className="composer-spacer" />
-
-          {/* Model selector */}
-          <div className="composer-selector-wrap">
-            <button
-              type="button"
-              className="composer-btn composer-btn--compact"
-              onClick={() => {
-                setModelOpen(!modelOpen);
-                setAgentOpen(false);
-                setActiveSubMenu(null);
-                setAttachmentMenuOpen(false);
-              }}
-              aria-label="Select model"
-              aria-expanded={modelOpen}
-              aria-haspopup="listbox"
-            >
-              <span>{currentModel?.label}</span>
-              <ChevronDown size={14} strokeWidth={2} />
-            </button>
-            {modelOpen && (
-              <Dropdown
-                options={modelOptions}
-                selected={selectedModel}
-                onSelect={setSelectedModel}
-                onClose={() => setModelOpen(false)}
-                className="composer-dropdown composer-dropdown--right"
-              />
-            )}
-          </div>
-
-          {/* Send or Microphone button */}
-          {value.trim() || attachedFiles.length > 0 ? (
-            <button
-              type="button"
-              className="composer-btn composer-btn--circle composer-btn--send"
-              onClick={handleSend}
-              aria-label="Send message"
-              title="Send message"
-            >
-              <Send size={16} strokeWidth={2} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="composer-btn composer-btn--circle"
-              onClick={() => showToast && showToast('Voice input — demo placeholder')}
-              aria-label="Voice input"
-              title="Voice input"
-            >
-              <Mic size={18} strokeWidth={2} />
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Sub-toolbar below chatbox matching Reference Image 1 & 2 */}

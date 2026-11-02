@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header/Header';
+import HistorySidebar from './components/HistorySidebar/HistorySidebar';
 import MoreOptionsMenu from './components/MoreOptionsMenu/MoreOptionsMenu';
 import WelcomeSection from './components/WelcomeSection/WelcomeSection';
 import QuickActions from './components/QuickActions/QuickActions';
@@ -24,14 +25,16 @@ import {
   getActiveTabInfo,
   extractActivePageText,
 } from './services/browserApi';
-import { getAssistantResponse } from './services/mockRunableService';
-import { getPageSummary, getSummaryFollowUpResponse } from './services/mockSummaryService';
+import { streamChat, summarizeWebpage } from './services/backendApi';
+import { getPageSummary } from './services/mockSummaryService';
+import { sampleChatHistory } from './data/demoData';
 
 import './components/Toast/Toast.css';
 
 export default function App() {
   // Navigation & dropdown state (closed by default)
   const [menuOpen, setMenuOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [activePage, setActivePage] = useState('home');
 
   // Selected-text context state (Phase 2)
@@ -45,8 +48,29 @@ export default function App() {
 
   // Conversation messages state
   const [messages, setMessages] = useState([]);
+  const [activeChatId, setActiveChatId] = useState(null);
   const [toast, showToast] = useToast();
   const [composerPlaceholderOverride, setComposerPlaceholderOverride] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+
+  // Chat history state persisted in localStorage
+  const [chatHistory, setChatHistory] = useState(() => {
+    try {
+      const stored = localStorage.getItem('runable_chat_history');
+      if (stored !== null) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (_) {}
+    return sampleChatHistory;
+  });
+
+  // Persist chat history to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('runable_chat_history', JSON.stringify(chatHistory));
+    } catch (_) {}
+  }, [chatHistory]);
 
   // Load pending context on mount and subscribe to changes
   useEffect(() => {
@@ -83,15 +107,23 @@ export default function App() {
 
   const handleToggleMenu = useCallback(() => {
     setMenuOpen((prev) => !prev);
+    setHistoryOpen(false);
   }, []);
 
   const handleCloseMenu = useCallback(() => {
     setMenuOpen(false);
   }, []);
 
+  const handleToggleHistory = useCallback(() => {
+    setHistoryOpen((prev) => !prev);
+    setMenuOpen(false);
+  }, []);
+
   // New Chat resets all active contexts and returns to home
   const handleNewChat = useCallback(() => {
     setMenuOpen(false);
+    setHistoryOpen(false);
+    setActiveChatId(null);
     setSelectedContext(null);
     setSummaryState({ status: 'idle', data: null });
     setMessages([]);
@@ -100,6 +132,37 @@ export default function App() {
     clearPendingContext();
     showToast('New chat started');
   }, [showToast]);
+
+  // Handle selecting a chat from the History drawer
+  const handleSelectHistoricalChat = useCallback(
+    (chat) => {
+      setActiveChatId(chat.id);
+      setMessages(chat.messages || []);
+      setSelectedContext(chat.selectedContext || null);
+      setSummaryState({ status: 'idle', data: null });
+      setComposerPlaceholderOverride(null);
+      setActivePage('home');
+      setHistoryOpen(false);
+      setMenuOpen(false);
+      showToast(`Loaded: "${chat.title}"`);
+    },
+    [showToast]
+  );
+
+  // Handle deleting a chat from history
+  const handleDeleteHistoricalChat = useCallback(
+    (chatId) => {
+      setChatHistory((prev) => prev.filter((c) => c.id !== chatId));
+      if (activeChatId === chatId) {
+        setActiveChatId(null);
+        setMessages([]);
+        setSelectedContext(null);
+        setSummaryState({ status: 'idle', data: null });
+      }
+      showToast('Chat deleted');
+    },
+    [activeChatId, showToast]
+  );
 
   // Handle menu navigation
   const handleMenuAction = useCallback(
@@ -125,7 +188,7 @@ export default function App() {
     showToast('Webpage context removed');
   }, [showToast]);
 
-  // Summarize This Page handler (Phase 4)
+  // Summarize This Page handler (Phase 4 + Real AI Backend)
   const handleSummarizeThisPage = useCallback(async () => {
     if (summaryState.status === 'loading') return;
 
@@ -133,6 +196,7 @@ export default function App() {
     setSelectedContext(null);
     clearPendingContext();
     setMessages([]);
+    setActiveChatId(null);
     setSummaryState({ status: 'loading', data: null });
 
     try {
@@ -142,8 +206,8 @@ export default function App() {
       // 2. Safely read readable page text locally if available
       const pageText = await extractActivePageText(tabInfo.id);
 
-      // 3. Generate deterministic local page summary
-      const summaryResult = await getPageSummary({
+      // 3. Generate page summary via FastAPI backend (or graceful local fallback)
+      const summaryResult = await summarizeWebpage({
         title: tabInfo.title,
         url: tabInfo.url,
         text: pageText,
@@ -164,38 +228,150 @@ export default function App() {
     }
   }, [summaryState.status]);
 
-  // Send message handler (supports both Ask with Runable & Summary follow-ups)
+  // Send message handler (supports streaming real AI responses, selection context & follow-ups)
   const handleSendMessage = useCallback(
     async (text) => {
+      const trimmed = (text || '').trim();
+      if (!trimmed || isSending) return;
+
+      setIsSending(true);
+
+      const currentChatId = activeChatId || `chat-${Date.now()}`;
+      if (!activeChatId) {
+        setActiveChatId(currentChatId);
+      }
+
       const userMessage = {
         id: `user_${Date.now()}`,
         role: 'user',
-        content: text,
+        content: trimmed,
         timestamp: Date.now(),
       };
 
-      setMessages((prev) => [...prev, userMessage]);
-
-      let assistantReply;
-
-      if (summaryState.status === 'completed' && summaryState.data) {
-        // Summary follow-up response
-        assistantReply = await getSummaryFollowUpResponse(text, summaryState.data);
-      } else {
-        // Ask with Runable response
-        assistantReply = await getAssistantResponse(text, selectedContext);
-      }
-
-      const assistantMessage = {
-        id: `assistant_${Date.now()}`,
+      const assistantMsgId = `assistant_${Date.now()}`;
+      const placeholderAssistantMessage = {
+        id: assistantMsgId,
         role: 'assistant',
-        content: assistantReply.content,
-        timestamp: assistantReply.timestamp,
+        content: '',
+        isStreaming: true,
+        timestamp: Date.now(),
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Add user message + streaming placeholder immediately
+      setMessages((prev) => [...prev, userMessage, placeholderAssistantMessage]);
+
+      // Determine context and mode
+      const isSummaryFollowUp = summaryState.status === 'completed' && Boolean(summaryState.data);
+      const mode = isSummaryFollowUp
+        ? 'page_followup'
+        : selectedContext
+        ? 'ask_selection'
+        : 'chat';
+
+      const pageContext = isSummaryFollowUp
+        ? {
+            title: summaryState.data.title || '',
+            url: summaryState.data.sourceUrl || '',
+            text: summaryState.data.summary || '',
+          }
+        : selectedContext;
+
+      // Prepare conversation history (up to last 6 messages)
+      const historyForApi = messages
+        .filter((m) => m.role === 'user' || m.role === 'assistant')
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
+      historyForApi.push({ role: 'user', content: trimmed });
+
+      let accumulatedContent = '';
+
+      const onToken = (chunk) => {
+        accumulatedContent += chunk;
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? { ...msg, content: accumulatedContent, isStreaming: true }
+              : msg
+          )
+        );
+      };
+
+      const onDone = (meta) => {
+        setIsSending(false);
+        const finalAssistantMessage = {
+          id: assistantMsgId,
+          role: 'assistant',
+          content: accumulatedContent,
+          isStreaming: false,
+          timestamp: Date.now(),
+          model: meta?.model || 'gpt-6.1-sol',
+        };
+
+        setMessages((prev) => {
+          const updated = prev.map((msg) =>
+            msg.id === assistantMsgId ? finalAssistantMessage : msg
+          );
+
+          // Sync with chatHistory
+          setChatHistory((prevHistory) => {
+            const existing = prevHistory.find((c) => c.id === currentChatId);
+            if (existing) {
+              return prevHistory.map((c) =>
+                c.id === currentChatId
+                  ? { ...c, messages: updated, timestamp: Date.now() }
+                  : c
+              );
+            } else {
+              const title = trimmed.slice(0, 36) || 'New Conversation';
+              const newChat = {
+                id: currentChatId,
+                title,
+                dateGroup: 'Today',
+                timestamp: Date.now(),
+                messages: updated,
+                selectedContext,
+              };
+              return [newChat, ...prevHistory];
+            }
+          });
+
+          return updated;
+        });
+      };
+
+      const onError = (err) => {
+        setIsSending(false);
+        const errorContent =
+          accumulatedContent ||
+          'Sorry, I encountered an issue connecting to the AI service. Please ensure the backend is running and your API key is configured.';
+        showToast(err.message || 'Error communicating with AI service');
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  content: errorContent,
+                  isStreaming: false,
+                  isError: true,
+                }
+              : msg
+          )
+        );
+      };
+
+      await streamChat({
+        messages: historyForApi,
+        pageContext,
+        mode,
+        onToken,
+        onDone,
+        onError,
+      });
     },
-    [selectedContext, summaryState]
+    [isSending, activeChatId, messages, summaryState, selectedContext, showToast]
   );
 
   const handleSignOut = useCallback(() => {
@@ -233,7 +409,8 @@ export default function App() {
       {activePage === 'home' && (
         <>
           <Header
-            onNewChat={handleNewChat}
+            onToggleHistory={handleToggleHistory}
+            historyOpen={historyOpen}
             onToggleMenu={handleToggleMenu}
             menuOpen={menuOpen}
           />
@@ -246,6 +423,17 @@ export default function App() {
           )}
         </>
       )}
+
+      {/* Left Slide-out History Drawer (ChatGPT / Claude style) */}
+      <HistorySidebar
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        chatHistory={chatHistory}
+        activeChatId={activeChatId}
+        onSelectChat={handleSelectHistoricalChat}
+        onNewChat={handleNewChat}
+        onDeleteChat={handleDeleteHistoricalChat}
+      />
 
       {/* Subpages routed from More Options */}
       {activePage === 'artifacts' && (

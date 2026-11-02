@@ -210,18 +210,154 @@ export const moreToolsCategories = [
   },
 ];
 
-/** Agent selector dropdown options */
-export const agentOptions = [
-  { id: 'agent', label: 'Agent', default: true },
-  { id: 'researcher', label: 'Researcher' },
-  { id: 'coder', label: 'Coder' },
-  { id: 'writer', label: 'Writer' },
+/** Agent selector modes matching Reference Image 1 */
+export const agentModes = [
+  {
+    id: 'agent',
+    label: 'Agent',
+    subtitle: 'Long, complex work',
+    iconType: 'smile',
+  },
+  {
+    id: 'ask',
+    label: 'Ask',
+    subtitle: 'Fast Q&A, plugins, and images',
+    iconType: 'chat',
+  },
+  {
+    id: 'plan',
+    label: 'Plan',
+    subtitle: 'Draft a plan before building',
+    iconType: 'plan',
+  },
 ];
 
-/** Model selector dropdown options */
+/** Compatibility alias */
+export const agentOptions = agentModes;
+
+/** Model selector choices matching Reference Image 2 */
+export const modelChoices = {
+  recommended: {
+    id: 'auto',
+    name: 'Auto',
+    badge: 'Recommended',
+    description: 'Always selects the best model',
+  },
+  list: [
+    {
+      id: 'fable-5.1',
+      name: 'Fable 5.1',
+      provider: 'claude',
+      isPro: true,
+    },
+    {
+      id: 'gpt-6-astra',
+      name: 'GPT 6 Astra',
+      provider: 'openai',
+      isPro: true,
+    },
+    {
+      id: 'opus-5.5',
+      name: 'Opus 5.5',
+      provider: 'claude',
+      isPro: true,
+    },
+    {
+      id: 'sonnet-5.5',
+      name: 'Sonnet 5.5',
+      provider: 'claude',
+      isPro: false,
+    },
+    {
+      id: 'gpt-6.1-sol',
+      name: 'GPT 6.1 Sol',
+      provider: 'openai',
+      isPro: true,
+    },
+    {
+      id: 'haiku-5.5',
+      name: 'Haiku 5.5',
+      provider: 'claude',
+      isPro: false,
+    },
+  ],
+};
+
+/** Compatibility alias */
 export const modelOptions = [
   { id: 'auto', label: 'Auto', default: true },
-  { id: 'fast', label: 'Fast' },
-  { id: 'balanced', label: 'Balanced' },
-  { id: 'precise', label: 'Precise' },
+  ...modelChoices.list.map((m) => ({ id: m.id, label: m.name })),
+];
+
+/** Sample initial chat history for the left-side drawer */
+export const sampleChatHistory = [
+  {
+    id: 'chat-1',
+    title: 'The future of AI agents',
+    dateGroup: 'Today',
+    timestamp: Date.now() - 1000 * 60 * 35,
+    messages: [
+      {
+        id: 'msg-1',
+        role: 'user',
+        content: 'Explain this in simple terms and give real-world examples.',
+        timestamp: Date.now() - 1000 * 60 * 35,
+      },
+      {
+        id: 'msg-2',
+        role: 'assistant',
+        content:
+          'In simple terms, AI agents can take a goal, figure out the steps needed, use tools (like web search, apps, or code), and complete the work for you.\n\nReal-world examples:\n1. Research: An agent can search the web, read multiple sources, and create a summary report.\n2. Content creation: It can write a blog post, generate slides, or create documents based on a topic.\n3. Web development: It can build and deploy a website from your description.\n4. Data analysis: It can collect data, analyze it, and generate charts or reports.\n5. Automation: It can handle multi-step workflows like sending emails, updating spreadsheets, or managing tasks.',
+        timestamp: Date.now() - 1000 * 60 * 34,
+      },
+    ],
+    selectedContext: {
+      selectedText:
+        'AI agents are transforming how we work by taking complex tasks and turning them into completed results. From researching information to building websites and generating reports, agents can now handle multi-step workflows autonomously.',
+      pageUrl: 'https://example.com/ai-agents',
+      pageTitle: 'The future of AI agents | Blog',
+    },
+  },
+  {
+    id: 'chat-2',
+    title: 'Competitive landscape research',
+    dateGroup: 'Previous 7 Days',
+    timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2,
+    messages: [
+      {
+        id: 'msg-201',
+        role: 'user',
+        content: 'Compare top AI agent tools and their key differentiators.',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2,
+      },
+      {
+        id: 'msg-202',
+        role: 'assistant',
+        content:
+          'Top AI agent platforms differ primarily in autonomy level, execution sandboxes, tool integrations, and human-in-the-loop controls. Runable specializes in multi-modal workspace companions with browser context awareness.',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 2 + 5000,
+      },
+    ],
+  },
+  {
+    id: 'chat-3',
+    title: 'Executive pitch deck outline',
+    dateGroup: 'Previous 7 Days',
+    timestamp: Date.now() - 1000 * 60 * 60 * 24 * 4,
+    messages: [
+      {
+        id: 'msg-301',
+        role: 'user',
+        content: 'Draft an 8-slide pitch deck structure for our Series A fundraising.',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 4,
+      },
+      {
+        id: 'msg-302',
+        role: 'assistant',
+        content:
+          'Here is an 8-slide executive pitch deck outline:\n1. Vision & Problem Statement\n2. The Solution: Autonomous Browser AI\n3. Market Opportunity & Tailwinds\n4. Product Architecture & Demo\n5. Traction & Growth Metrics\n6. Business Model & Unit Economics\n7. Competitive Moat\n8. The Team & Ask',
+        timestamp: Date.now() - 1000 * 60 * 60 * 24 * 4 + 6000,
+      },
+    ],
+  },
 ];

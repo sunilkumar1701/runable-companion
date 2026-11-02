@@ -111,7 +111,20 @@ export default function ConversationView({ messages }) {
                 R
               </div>
               <div className="conversation-bubble conversation-bubble--assistant">
-                <FormattedAssistantText content={msg.content} />
+                {msg.content ? (
+                  <>
+                    <FormattedAssistantText content={msg.content} />
+                    {msg.isStreaming && (
+                      <span className="streaming-cursor" aria-hidden="true">▋</span>
+                    )}
+                  </>
+                ) : msg.isStreaming ? (
+                  <div className="assistant-typing-dots">
+                    <span className="dot" />
+                    <span className="dot" />
+                    <span className="dot" />
+                  </div>
+                ) : null}
               </div>
             </div>
           );
