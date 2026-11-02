@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Search, ListFilter, Plus, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function PluginsPage({ onBack, showToast }) {
+export default function PluginsPage({ onBack }) {
   const [activeTab, setActiveTab] = useState('Plugins');
   const [activeFilter, setActiveFilter] = useState('Discover');
   const [searchQuery, setSearchQuery] = useState('');
@@ -12,9 +12,7 @@ export default function PluginsPage({ onBack, showToast }) {
   const filterChips = ['Discover', 'Connected', 'Included with Runable'];
 
   const toggleConnect = (provider, state, setter) => {
-    const nextState = !state;
-    setter(nextState);
-    if (showToast) showToast(`${provider} ${nextState ? 'connected' : 'disconnected'} (Demo)`);
+    setter(!state);
   };
 
   return (
@@ -33,7 +31,6 @@ export default function PluginsPage({ onBack, showToast }) {
 
         <button
           type="button"
-          onClick={() => showToast && showToast('Add Custom Plugin — demo placeholder')}
           className="subpage-btn-primary"
         >
           Add Custom Plugin
@@ -93,7 +90,6 @@ export default function PluginsPage({ onBack, showToast }) {
 
           <button
             type="button"
-            onClick={() => showToast && showToast('Filter options — demo placeholder')}
             className="subpage-circle-btn"
             style={{ width: '30px', height: '30px' }}
             aria-label="Filter"
@@ -197,7 +193,6 @@ export default function PluginsPage({ onBack, showToast }) {
             <div className="plugins-social-actions">
               <button
                 type="button"
-                onClick={() => showToast && showToast('Viewing all social plugins (Demo)')}
                 className="plugins-view-all-btn"
               >
                 View all

@@ -3,9 +3,11 @@ Runable Companion — FastAPI Backend
 Exposes health, configuration, chat, and summarization endpoints.
 """
 
+import os
 import json
+import base64
 import logging
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -13,10 +15,14 @@ from app.config import settings
 from app.schemas import (
     ChatRequest,
     SummarizeRequest,
+    PDFExtractRequest,
+    PDFExtractResponse,
     HealthResponse,
     ConfigResponse,
 )
+from app.services.pdf_service import extract_text_from_pdf_bytes
 from app.services.ai_service import (
+    UpstreamAIError,
     chat_completion,
     chat_completion_stream,
     summarize_page,
@@ -89,6 +95,9 @@ async def chat(request: ChatRequest):
             mode=request.mode,
         )
         return result
+    except UpstreamAIError as e:
+        status = e.status_code if e.status_code < 500 else 502
+        raise HTTPException(status_code=status, detail=e.message)
     except Exception as e:
         logger.error("Chat completion error: %s", str(e))
         raise HTTPException(
@@ -157,8 +166,12 @@ async def summarize(request: SummarizeRequest):
             title=request.title,
             url=request.url,
             text=request.text,
+            content_type=request.content_type or "html",
         )
         return result
+    except UpstreamAIError as e:
+        status = e.status_code if e.status_code < 500 else 502
+        raise HTTPException(status_code=status, detail=e.message)
     except Exception as e:
         logger.error("Summarization error: %s", str(e))
         raise HTTPException(
@@ -185,6 +198,7 @@ async def summarize_stream(request: SummarizeRequest):
                 title=request.title,
                 url=request.url,
                 text=request.text,
+                content_type=request.content_type or "html",
             ):
                 event_name = chunk.get("event", "token")
                 payload = json.dumps(chunk)
@@ -203,4 +217,55 @@ async def summarize_stream(request: SummarizeRequest):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@app.post("/api/extract-pdf", response_model=PDFExtractResponse)
+async def extract_pdf(request: PDFExtractRequest):
+    """
+    Extract readable text from a PDF document sent via base64 or local filesystem path.
+    Preserves page boundaries and detects encrypted or scanned PDFs.
+    """
+    raw_bytes = None
+
+    # 1. Try reading directly from local file_path if provided
+    if request.file_path:
+        # Normalize Windows path
+        clean_path = os.path.normpath(request.file_path)
+        if os.path.isfile(clean_path):
+            try:
+                with open(clean_path, "rb") as f:
+                    raw_bytes = f.read()
+                logger.info("Successfully read PDF from local file_path: %s (%d bytes)", clean_path, len(raw_bytes))
+            except Exception as e:
+                logger.warning("Failed to read local file_path %s: %s", clean_path, str(e))
+
+    # 2. Try base64 decoded bytes if not loaded from file
+    if not raw_bytes and request.base64_data:
+        try:
+            raw_bytes = base64.b64decode(request.base64_data)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid base64 encoding: {str(e)}",
+            )
+
+    if not raw_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing valid PDF content (provide base64_data or an accessible file_path).",
+        )
+
+    result = extract_text_from_pdf_bytes(raw_bytes)
+    return PDFExtractResponse(
+        text=result["text"],
+        num_pages=result["num_pages"],
+        title=request.title or "PDF Document",
+        url=request.url or "",
+        content_type="pdf",
+        is_encrypted=result["is_encrypted"],
+        is_scanned=result["is_scanned"],
+        is_truncated=result["is_truncated"],
+        warning=result.get("warning"),
+    )
+
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Search, Clock, ChevronDown, Bell, Calendar, Plus } from 'lucide-react';
 
-export default function ScheduledTasksPage({ onBack, showToast }) {
+export default function ScheduledTasksPage({ onBack }) {
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [tasks, setTasks] = useState([]);
@@ -9,7 +9,7 @@ export default function ScheduledTasksPage({ onBack, showToast }) {
   const filterChips = ['All', 'Active', 'Paused', 'Completed'];
 
   const handleCreateTask = () => {
-    if (showToast) showToast('Create scheduled task — demo placeholder');
+    // Action handled without toast popup
   };
 
   return (

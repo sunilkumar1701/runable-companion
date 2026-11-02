@@ -21,10 +21,14 @@
     "storage",
     "commands",
     "tabs",
-    "scripting"
+    "scripting",
+    "activeTab"
   ],
   "host_permissions": [
-    "http://127.0.0.1:8000/*"
+    "http://127.0.0.1:8000/*",
+    "http://*/*",
+    "https://*/*",
+    "file:///*"
   ],
   "commands": {
     "open-runable-side-panel": {

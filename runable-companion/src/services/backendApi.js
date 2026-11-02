@@ -63,6 +63,8 @@ function parseSummaryContent(content, title = '', url = '') {
 
   if (takeawaysMatch) {
     summaryParagraph = content.substring(0, takeawaysMatch.index).trim();
+    // Strip trailing markdown headers, hashes, bullets, or dashes
+    summaryParagraph = summaryParagraph.replace(/[#\s]+$/, '').trim();
     const rawList = takeawaysMatch[1].trim();
 
     // Split lines by bullets (*, -, •, numbers)
@@ -70,6 +72,8 @@ function parseSummaryContent(content, title = '', url = '') {
       .split('\n')
       .map((line) => line.replace(/^[-*•\d.]+\s*/, '').trim())
       .filter((line) => line.length > 0 && !line.toLowerCase().startsWith('important detail'));
+  } else {
+    summaryParagraph = summaryParagraph.replace(/[#\s]+$/, '').trim();
   }
 
   // If no bullet points were separated, extract sentences or fallback
@@ -135,10 +139,12 @@ export async function streamChat({
     let formattedContext = null;
     if (pageContext) {
       formattedContext = {
+        type: pageContext.type || (mode === 'ask_selection' ? 'selection' : 'webpage'),
         title: pageContext.pageTitle || pageContext.title || '',
         url: pageContext.pageUrl || pageContext.url || '',
         text: pageContext.text || '',
-        selected_text: pageContext.selectedText || '',
+        selected_text: pageContext.selectedText || pageContext.selected_text || '',
+        truncated: Boolean(pageContext.truncated),
       };
     }
 
@@ -215,45 +221,55 @@ export async function streamChat({
  * @param {Object} pageInfo - { title, url, text }
  * @returns {Promise<Object>}
  */
-export async function summarizeWebpage({ title = '', url = '', text = '' }) {
+export async function summarizeWebpage({
+  title = '',
+  url = '',
+  text = '',
+  truncated = false,
+  contentType = 'html',
+  warning = null,
+}) {
   const available = await isBackendAvailable();
 
   if (!available) {
-    // Graceful offline mock fallback
+    // Graceful offline mock fallback only when backend server is completely offline
     return await getMockPageSummary({ title, url, text });
   }
 
-  try {
-    const res = await fetch(`${BACKEND_BASE_URL}/api/summarize`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title,
-        url,
-        text: text || `Page title: ${title}. URL: ${url}`,
-      }),
-    });
+  const res = await fetch(`${BACKEND_BASE_URL}/api/summarize`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      title,
+      url,
+      text: text || `Page title: ${title}. URL: ${url}`,
+      content_type: contentType,
+      truncated: Boolean(truncated),
+    }),
+  });
 
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      throw new Error(errJson.detail || `Summarization failed (${res.status})`);
-    }
-
-    const data = await res.json();
-    const parsed = parseSummaryContent(data.content, data.title || title, data.source_url || url);
-
-    return {
-      ...parsed,
-      isRealAi: true,
-      model: data.model,
-      durationMs: data.duration_ms,
-    };
-  } catch (err) {
-    console.warn('Real AI summarize failed, falling back to mock:', err);
-    return await getMockPageSummary({ title, url, text });
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => ({}));
+    throw new Error(errJson.detail || `Summarization failed (${res.status})`);
   }
+
+  const data = await res.json();
+  const parsed = parseSummaryContent(
+    data.content || data.summary,
+    data.title || title,
+    data.source_url || url
+  );
+
+  return {
+    ...parsed,
+    isRealAi: true,
+    model: data.model,
+    durationMs: data.duration_ms,
+    contentType: data.content_type || contentType,
+    warning: data.warning || warning || null,
+  };
 }
 
 /**

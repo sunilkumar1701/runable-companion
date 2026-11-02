@@ -177,3 +177,30 @@ chrome.commands.onCommand.addListener((command, tab) => {
 chrome.action?.onClicked?.addListener((tab) => {
   openSidePanelSynchronously(tab);
 });
+
+// Safe PDF fetcher in service worker context (has full file:// and host permissions)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === 'FETCH_PDF_BYTES' && message.url) {
+    fetch(message.url)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.arrayBuffer();
+      })
+      .then((buffer) => {
+        const bytes = new Uint8Array(buffer);
+        let binary = '';
+        const chunk = 8192;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        const b64 = btoa(binary);
+        sendResponse({ success: true, base64: b64 });
+      })
+      .catch((err) => {
+        console.warn('[Runable SW] PDF fetch failed:', err);
+        sendResponse({ success: false, error: err.message });
+      });
+    return true; // asynchronous sendResponse
+  }
+});
+

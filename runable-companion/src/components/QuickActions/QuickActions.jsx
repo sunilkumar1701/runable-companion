@@ -8,7 +8,6 @@ import './QuickActions.css';
  * (Code, Productivity, Content Creation) matching Reference Images 3 and 4.
  */
 export default function QuickActions({
-  onAction,
   onSummarize,
   onSelectTool,
   activeAction,
@@ -22,22 +21,12 @@ export default function QuickActions({
       }
     } else if (action.id === 'more-tools') {
       setIsMoreToolsOpen(true);
-    } else {
-      if (onAction) {
-        onAction(action.toast);
-      }
     }
   };
 
   const handleToolSelection = (tool) => {
-    if (tool.id === 'slides') {
-      if (onAction) onAction('Create slides — demo placeholder');
-    } else if (tool.id === 'report') {
-      if (onAction) onAction('Create report — demo placeholder');
-    } else if (onSelectTool) {
+    if (onSelectTool) {
       onSelectTool(tool);
-    } else if (onAction) {
-      onAction(`Tool selected: ${tool.title} (Demo)`);
     }
   };
 

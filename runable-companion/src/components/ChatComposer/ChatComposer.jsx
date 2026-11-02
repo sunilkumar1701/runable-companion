@@ -7,6 +7,7 @@ import {
   Send,
   Folder,
   Paperclip,
+  FileText,
   X,
   MessageSquare,
 } from 'lucide-react';
@@ -82,9 +83,10 @@ function InterlockingLinkIcon({ size = 14, className = '' }) {
  */
 export default function ChatComposer({
   onSendMessage,
-  showToast,
   onNavigate,
   placeholder = 'Ask Runable anything...',
+  selectedContext = null,
+  onClearSelectedContext,
 }) {
   const [value, setValue] = useState('');
   const [agentOpen, setAgentOpen] = useState(false);
@@ -115,18 +117,13 @@ export default function ChatComposer({
         setSelectedAgent((prev) => {
           const modes = ['agent', 'ask', 'plan'];
           const nextIdx = (modes.indexOf(prev) + 1) % modes.length;
-          const nextMode = modes[nextIdx];
-          if (showToast) {
-            const label = nextMode.charAt(0).toUpperCase() + nextMode.slice(1);
-            showToast(`Switched mode: ${label}`);
-          }
-          return nextMode;
+          return modes[nextIdx];
         });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showToast]);
+  }, []);
 
   // Close menus on click outside
   useEffect(() => {
@@ -155,24 +152,26 @@ export default function ChatComposer({
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim();
-    if (!trimmed && attachedFiles.length === 0) return;
+    if (!trimmed && attachedFiles.length === 0 && !selectedContext) return;
 
-    const fullMessage = attachedFiles.length > 0
-      ? `${trimmed ? trimmed + ' ' : ''}[Attached: ${attachedFiles.map((f) => f.name).join(', ')}]`
-      : trimmed;
+    const fileAttachmentsText = attachedFiles.length > 0
+      ? `${trimmed ? ' ' : ''}[Attached: ${attachedFiles.map((f) => f.name).join(', ')}]`
+      : '';
+    const fullMessage = (trimmed || (selectedContext ? 'Explain the selected webpage text.' : '')) + fileAttachmentsText;
 
     if (onSendMessage) {
-      onSendMessage(fullMessage);
-    } else if (showToast) {
-      showToast(`Demo message: "${fullMessage.slice(0, 60)}"`);
+      onSendMessage(fullMessage, selectedContext);
     }
 
     setValue('');
     setAttachedFiles([]);
+    if (onClearSelectedContext) {
+      onClearSelectedContext();
+    }
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-  }, [value, attachedFiles, onSendMessage, showToast]);
+  }, [value, attachedFiles, selectedContext, onSendMessage, onClearSelectedContext]);
 
   const handleVoiceConfirm = useCallback(
     (speechText) => {
@@ -180,12 +179,10 @@ export default function ChatComposer({
       if (speechText && speechText.trim()) {
         if (onSendMessage) {
           onSendMessage(speechText.trim());
-        } else if (showToast) {
-          showToast(`Voice message: "${speechText.slice(0, 60)}"`);
         }
       }
     },
-    [onSendMessage, showToast]
+    [onSendMessage]
   );
 
   const handleKeyDown = useCallback(
@@ -213,26 +210,21 @@ export default function ChatComposer({
     setProjects((prev) => [newProj, ...prev]);
     setSelectedProject(newProj);
     setActiveSubMenu(null);
-    if (showToast) showToast(`Project created: "${name}"`);
   };
 
   const handleSelectProject = (proj) => {
     setSelectedProject(proj);
     setActiveSubMenu(null);
-    if (showToast) showToast(`Switched to "${proj.name}"`);
   };
 
-  const handleSelectPluginCategory = (cat) => {
+  const handleSelectPluginCategory = () => {
     setActiveSubMenu(null);
-    if (showToast) showToast(`${cat.name} — demo placeholder`);
   };
 
   const handleConnectPlugins = () => {
     setActiveSubMenu(null);
     if (onNavigate) {
       onNavigate('plugins');
-    } else if (showToast) {
-      showToast('Opening Plugins...');
     }
   };
 
@@ -242,8 +234,6 @@ export default function ChatComposer({
     if (actionId === 'notetaker') {
       if (onNavigate) {
         onNavigate('notetaker');
-      } else if (showToast) {
-        showToast('Opening AI Notetaker...');
       }
     } else if (actionId === 'clone-voice') {
       setValue('Clone a voice: Please analyze my voice sample and configure narration style for ');
@@ -287,6 +277,53 @@ export default function ChatComposer({
           />
         ) : (
           <>
+            {/* Selected webpage text context chip inside composer (Task B) */}
+            {selectedContext && selectedContext.selectedText && (
+              <div className="composer-selected-context-wrap">
+                <div className="composer-selected-context-chip">
+                  <div className="composer-selected-context-left">
+                    <FileText size={15} className="composer-selected-context-icon" />
+                    <div className="composer-selected-context-info">
+                      <div className="composer-selected-context-label">
+                        <span>Selected from webpage</span>
+                        {selectedContext.pageUrl && (
+                          <span className="composer-selected-context-domain">
+                            • {(() => {
+                              try {
+                                return new URL(selectedContext.pageUrl).hostname;
+                              } catch (_) {
+                                return selectedContext.pageUrl.slice(0, 30);
+                              }
+                            })()}
+                          </span>
+                        )}
+                      </div>
+                      <div
+                        className="composer-selected-context-snippet"
+                        title={selectedContext.selectedText}
+                      >
+                        "{selectedContext.selectedText.length > 140
+                          ? selectedContext.selectedText.slice(0, 140) + '…'
+                          : selectedContext.selectedText}"
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="composer-selected-context-remove"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onClearSelectedContext) onClearSelectedContext();
+                    }}
+                    title="Remove selected text attachment"
+                    aria-label="Remove selected text attachment"
+                  >
+                    <X size={14} strokeWidth={2.5} />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Attached files preview chips */}
             {attachedFiles.length > 0 && (
               <div className="composer-attachments-row">

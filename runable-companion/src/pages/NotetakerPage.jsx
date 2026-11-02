@@ -13,27 +13,17 @@ import {
 } from 'lucide-react';
 import { sampleNotes } from '../data/menuPagesData';
 
-export default function NotetakerPage({ onBack, showToast, onNavigate }) {
+export default function NotetakerPage({ onBack, onNavigate }) {
   const [calendarConnected, setCalendarConnected] = useState(false);
   const [showSavedNotes, setShowSavedNotes] = useState(false);
 
   const handleConnectCalendar = () => {
-    const nextState = !calendarConnected;
-    setCalendarConnected(nextState);
-    if (showToast) {
-      showToast(
-        nextState
-          ? 'Calendar connected successfully (Demo)'
-          : 'Calendar disconnected (Demo)'
-      );
-    }
+    setCalendarConnected((prev) => !prev);
   };
 
   const handleOpenSettings = () => {
     if (onNavigate) {
       onNavigate('settings');
-    } else if (showToast) {
-      showToast('Opening Notetaker settings...');
     }
   };
 

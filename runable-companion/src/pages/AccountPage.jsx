@@ -13,25 +13,16 @@ import {
 } from 'lucide-react';
 import { defaultAccountData } from '../data/menuPagesData';
 
-export default function AccountPage({ onBack, onSignOut, showToast, onNavigate }) {
+export default function AccountPage({ onBack, onSignOut, onNavigate }) {
   const [appearanceTheme, setAppearanceTheme] = useState('System');
 
   const handleRowClick = (action) => {
-    if (action === 'invite') {
-      if (showToast) showToast('Referral link copied to clipboard (Demo)');
-    } else if (action === 'affiliate') {
-      if (showToast) showToast('Opening Runable Affiliate Program (Demo)');
-    } else if (action === 'help') {
-      if (showToast) showToast('Opening Help & Documentation (Demo)');
-    } else if (action === 'appearance') {
+    if (action === 'appearance') {
       const next = appearanceTheme === 'System' ? 'Dark' : appearanceTheme === 'Dark' ? 'Light' : 'System';
       setAppearanceTheme(next);
-      if (showToast) showToast(`Theme set to ${next} (Demo)`);
     } else if (action === 'settings') {
       if (onNavigate) {
         onNavigate('settings');
-      } else if (showToast) {
-        showToast('Navigating to Settings...');
       }
     }
   };
@@ -86,14 +77,12 @@ export default function AccountPage({ onBack, onSignOut, showToast, onNavigate }
           <div className="account-credits-actions">
             <button
               type="button"
-              onClick={() => showToast && showToast('Credits Usage: 0 / 100k used (Demo)')}
               className="account-btn-usage"
             >
               Usage
             </button>
             <button
               type="button"
-              onClick={() => showToast && showToast('Upgrade to Pro plan (Demo)')}
               className="account-btn-upgrade"
             >
               Upgrade

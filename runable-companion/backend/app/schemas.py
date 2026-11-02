@@ -21,12 +21,16 @@ class ChatMessage(BaseModel):
 
 
 class PageContext(BaseModel):
-    """Optional webpage context."""
+    """Optional webpage or selection context."""
 
-    title: str = Field("", max_length=500)
-    url: str = Field("", max_length=2000)
-    text: str = Field("", max_length=12000)
-    selected_text: str = Field("", max_length=4000)
+    type: Optional[str] = Field("webpage", description="Context type: webpage or selection")
+    content_type: Optional[str] = Field("html", description="Document type: html or pdf")
+    title: Optional[str] = Field("", max_length=500)
+    url: Optional[str] = Field("", max_length=2000)
+    text: Optional[str] = Field("", max_length=15000)
+    selected_text: Optional[str] = Field("", max_length=4000)
+    truncated: Optional[bool] = Field(False)
+    warning: Optional[str] = None
 
 
 class ChatRequest(BaseModel):
@@ -37,14 +41,14 @@ class ChatRequest(BaseModel):
     )
     page_context: Optional[PageContext] = None
     mode: str = Field(
-        "chat", description="Interaction mode: chat, ask_selection, page_followup"
+        "chat", description="Interaction mode: chat, ask_selection, page_followup, webpage"
     )
 
     @field_validator("mode")
     @classmethod
     def validate_mode(cls, v: str) -> str:
-        if v not in ("chat", "ask_selection", "page_followup"):
-            raise ValueError("mode must be chat, ask_selection, or page_followup")
+        if v not in ("chat", "ask_selection", "page_followup", "webpage"):
+            raise ValueError("mode must be chat, ask_selection, page_followup, or webpage")
         return v
 
     @field_validator("messages")
@@ -60,7 +64,32 @@ class SummarizeRequest(BaseModel):
 
     title: str = Field("", max_length=500)
     url: str = Field("", max_length=2000)
-    text: str = Field(..., min_length=10, max_length=12000)
+    text: str = Field(..., min_length=1, max_length=15000)
+    content_type: Optional[str] = Field("html", description="Document type: html or pdf")
+    truncated: Optional[bool] = False
+
+
+class PDFExtractRequest(BaseModel):
+    """Request body for /api/extract-pdf via JSON."""
+
+    base64_data: Optional[str] = None
+    file_path: Optional[str] = None
+    title: Optional[str] = ""
+    url: Optional[str] = ""
+
+
+class PDFExtractResponse(BaseModel):
+    """Response body for PDF text extraction."""
+
+    text: str
+    num_pages: int
+    title: Optional[str] = ""
+    url: Optional[str] = ""
+    content_type: str = "pdf"
+    is_encrypted: bool = False
+    is_scanned: bool = False
+    is_truncated: bool = False
+    warning: Optional[str] = None
 
 
 class HealthResponse(BaseModel):

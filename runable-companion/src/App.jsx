@@ -5,11 +5,9 @@ import MoreOptionsMenu from './components/MoreOptionsMenu/MoreOptionsMenu';
 import WelcomeSection from './components/WelcomeSection/WelcomeSection';
 import QuickActions from './components/QuickActions/QuickActions';
 import ChatComposer from './components/ChatComposer/ChatComposer';
-import SelectedContextCard from './components/SelectedContextCard/SelectedContextCard';
 import ConversationView from './components/ConversationView/ConversationView';
 import SummaryLoadingState from './components/PageSummary/SummaryLoadingState';
 import PageSummaryCard from './components/PageSummary/PageSummaryCard';
-import Toast, { useToast } from './components/Toast/Toast';
 
 import ArtifactsPage from './pages/ArtifactsPage';
 import ScheduledTasksPage from './pages/ScheduledTasksPage';
@@ -24,12 +22,11 @@ import {
   onContextChange,
   getActiveTabInfo,
   extractActivePageText,
+  extractActivePageContent,
 } from './services/browserApi';
 import { streamChat, summarizeWebpage } from './services/backendApi';
 import { getPageSummary } from './services/mockSummaryService';
 import { sampleChatHistory } from './data/demoData';
-
-import './components/Toast/Toast.css';
 
 export default function App() {
   // Navigation & dropdown state (closed by default)
@@ -46,10 +43,26 @@ export default function App() {
     data: null,
   });
 
-  // Conversation messages state
-  const [messages, setMessages] = useState([]);
-  const [activeChatId, setActiveChatId] = useState(null);
-  const [toast, showToast] = useToast();
+  // Conversation messages state persisted across mounts and Ask with Runable
+  const [activeChatId, setActiveChatId] = useState(() => {
+    try {
+      return localStorage.getItem('runable_active_chat_id') || null;
+    } catch (_) {
+      return null;
+    }
+  });
+
+  const [messages, setMessages] = useState(() => {
+    try {
+      const stored = localStorage.getItem('runable_active_messages');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+
   const [composerPlaceholderOverride, setComposerPlaceholderOverride] = useState(null);
   const [isSending, setIsSending] = useState(false);
 
@@ -72,6 +85,23 @@ export default function App() {
     } catch (_) {}
   }, [chatHistory]);
 
+  // Persist active chat session across component unmounts and side panel re-opens
+  useEffect(() => {
+    try {
+      if (activeChatId) {
+        localStorage.setItem('runable_active_chat_id', activeChatId);
+      } else {
+        localStorage.removeItem('runable_active_chat_id');
+      }
+    } catch (_) {}
+  }, [activeChatId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('runable_active_messages', JSON.stringify(messages));
+    } catch (_) {}
+  }, [messages]);
+
   // Load pending context on mount and subscribe to changes
   useEffect(() => {
     let isMounted = true;
@@ -80,7 +110,6 @@ export default function App() {
       const payload = await getPendingContext();
       if (isMounted && payload && payload.selectedText) {
         setSelectedContext(payload);
-        setSummaryState({ status: 'idle', data: null });
         setActivePage('home');
       }
     }
@@ -91,7 +120,6 @@ export default function App() {
       if (isMounted) {
         if (newPayload && newPayload.selectedText) {
           setSelectedContext(newPayload);
-          setSummaryState({ status: 'idle', data: null });
           setActivePage('home');
         } else {
           setSelectedContext(null);
@@ -130,8 +158,11 @@ export default function App() {
     setComposerPlaceholderOverride(null);
     setActivePage('home');
     clearPendingContext();
-    showToast('New chat started');
-  }, [showToast]);
+    try {
+      localStorage.removeItem('runable_active_chat_id');
+      localStorage.removeItem('runable_active_messages');
+    } catch (_) {}
+  }, []);
 
   // Handle selecting a chat from the History drawer
   const handleSelectHistoricalChat = useCallback(
@@ -144,9 +175,8 @@ export default function App() {
       setActivePage('home');
       setHistoryOpen(false);
       setMenuOpen(false);
-      showToast(`Loaded: "${chat.title}"`);
     },
-    [showToast]
+    []
   );
 
   // Handle deleting a chat from history
@@ -159,9 +189,8 @@ export default function App() {
         setSelectedContext(null);
         setSummaryState({ status: 'idle', data: null });
       }
-      showToast('Chat deleted');
     },
-    [activeChatId, showToast]
+    [activeChatId]
   );
 
   // Handle menu navigation
@@ -185,56 +214,105 @@ export default function App() {
   const handleCloseSelectedContext = useCallback(() => {
     setSelectedContext(null);
     clearPendingContext();
-    showToast('Webpage context removed');
-  }, [showToast]);
+  }, []);
 
   // Summarize This Page handler (Phase 4 + Real AI Backend)
   const handleSummarizeThisPage = useCallback(async () => {
     if (summaryState.status === 'loading') return;
+
+    // Save existing active chat to chatHistory before transitioning to summary
+    if (messages.length > 0 && activeChatId) {
+      setChatHistory((prev) => {
+        const exists = prev.some((c) => c.id === activeChatId);
+        if (!exists) {
+          const firstUserMsg = messages.find((m) => m.role === 'user')?.content || 'Conversation';
+          return [
+            {
+              id: activeChatId,
+              title: firstUserMsg.slice(0, 36),
+              dateGroup: 'Today',
+              timestamp: Date.now(),
+              messages: [...messages],
+            },
+            ...prev,
+          ];
+        }
+        return prev.map((c) => (c.id === activeChatId ? { ...c, messages: [...messages] } : c));
+      });
+    }
 
     // Reset selection context and existing messages for a clean summary session
     setSelectedContext(null);
     clearPendingContext();
     setMessages([]);
     setActiveChatId(null);
+    try {
+      localStorage.removeItem('runable_active_chat_id');
+      localStorage.removeItem('runable_active_messages');
+    } catch (_) {}
     setSummaryState({ status: 'loading', data: null });
 
     try {
-      // 1. Get actual active tab URL & title
-      const tabInfo = await getActiveTabInfo();
+      // 1. Extract structured readable content from active tab
+      const tabContent = await extractActivePageContent();
 
-      // 2. Safely read readable page text locally if available
-      const pageText = await extractActivePageText(tabInfo.id);
+      if (tabContent.isProtected) {
+        setSummaryState({
+          status: 'completed',
+          data: {
+            title: tabContent.title || 'Protected Browser Page',
+            sourceUrl: tabContent.url || '',
+            summary:
+              'Cannot extract content from browser protected pages (such as chrome://, extension settings, or browser web stores) due to browser security restrictions.',
+            keyTakeaways: [
+              'Browser security policies restrict extension access to internal settings and store pages.',
+              'To summarize an article or webpage, navigate to a regular website (e.g. Wikipedia, blog, news) and click Summarize this page.',
+            ],
+            contentType: 'protected',
+          },
+        });
+        return;
+      }
 
-      // 3. Generate page summary via FastAPI backend (or graceful local fallback)
+      // 2. Generate page summary via FastAPI backend
       const summaryResult = await summarizeWebpage({
-        title: tabInfo.title,
-        url: tabInfo.url,
-        text: pageText,
+        title: tabContent.title,
+        url: tabContent.url,
+        text: tabContent.text,
+        truncated: tabContent.truncated,
+        contentType: tabContent.contentType,
+        warning: tabContent.warning,
       });
 
       setSummaryState({
         status: 'completed',
-        data: summaryResult,
+        data: {
+          ...summaryResult,
+          fullText: tabContent.text,
+          contentType: tabContent.contentType,
+          warning: tabContent.warning || summaryResult.warning,
+        },
       });
     } catch (err) {
-      console.warn('Summarization fallback error:', err);
-      // Graceful fallback so demo is never blocked
+      console.warn('Summarization error:', err);
+      // Graceful fallback so demo is never completely blocked
       const fallbackResult = await getPageSummary();
       setSummaryState({
         status: 'completed',
         data: fallbackResult,
       });
     }
-  }, [summaryState.status]);
+  }, [summaryState.status, messages, activeChatId]);
 
   // Send message handler (supports streaming real AI responses, selection context & follow-ups)
   const handleSendMessage = useCallback(
-    async (text) => {
+    async (text, explicitSelection = null) => {
       const trimmed = (text || '').trim();
       if (!trimmed || isSending) return;
 
       setIsSending(true);
+
+      const activeSelection = explicitSelection || selectedContext;
 
       const currentChatId = activeChatId || `chat-${Date.now()}`;
       if (!activeChatId) {
@@ -245,6 +323,7 @@ export default function App() {
         id: `user_${Date.now()}`,
         role: 'user',
         content: trimmed,
+        attachmentContext: activeSelection ? { ...activeSelection } : null,
         timestamp: Date.now(),
       };
 
@@ -260,21 +339,90 @@ export default function App() {
       // Add user message + streaming placeholder immediately
       setMessages((prev) => [...prev, userMessage, placeholderAssistantMessage]);
 
-      // Determine context and mode
-      const isSummaryFollowUp = summaryState.status === 'completed' && Boolean(summaryState.data);
-      const mode = isSummaryFollowUp
-        ? 'page_followup'
-        : selectedContext
-        ? 'ask_selection'
-        : 'chat';
+      // Clear pending selection in composer state now that it has been sent
+      if (selectedContext) {
+        setSelectedContext(null);
+        clearPendingContext();
+      }
 
-      const pageContext = isSummaryFollowUp
-        ? {
-            title: summaryState.data.title || '',
-            url: summaryState.data.sourceUrl || '',
-            text: summaryState.data.summary || '',
+      // Determine context and mode
+      let mode = 'chat';
+      let pageContext = null;
+
+      // 1. Broad page-grounded query detector (including pdf, resume, cv, etc.)
+      const isPageQuery = /\b(page|webpage|website|site|tab|article|document|doc|pdf|profile|resume|cv|who\s+is|who\s+are|what\s+does|about\s+section|author|qualifications?|experience|education|here|opened)\b/i.test(trimmed);
+
+      // 2. Query active tab information
+      const activeTabInfo = await getActiveTabInfo();
+      const activeTabUrl = activeTabInfo?.url || '';
+
+      // 3. Stale summary check: if user navigated away from the summarized page, invalidate summaryState
+      const isSummaryStale =
+        summaryState.status === 'completed' &&
+        summaryState.data?.sourceUrl &&
+        activeTabUrl &&
+        summaryState.data.sourceUrl !== activeTabUrl;
+
+      let effectiveSummaryData = summaryState.data;
+      if (isSummaryStale) {
+        setSummaryState({ status: 'idle', data: null });
+        effectiveSummaryData = null;
+      }
+
+      if (activeSelection && activeSelection.selectedText) {
+        mode = 'ask_selection';
+        let pageText = activeSelection.selectedText;
+        let isTruncated = false;
+
+        // If the question also inquires about the broader page, extract active page content too
+        if (isPageQuery) {
+          try {
+            const tabContent = await extractActivePageContent(activeTabInfo?.id);
+            if (tabContent && tabContent.text) {
+              pageText = tabContent.text;
+              isTruncated = tabContent.truncated;
+            }
+          } catch (_) {}
+        }
+
+        pageContext = {
+          type: 'selection',
+          content_type: activeSelection.contentType || 'html',
+          title: activeSelection.pageTitle || '',
+          url: activeSelection.pageUrl || '',
+          selected_text: activeSelection.selectedText || '',
+          text: pageText,
+          truncated: isTruncated,
+        };
+      } else if (summaryState.status === 'completed' && Boolean(effectiveSummaryData)) {
+        // Follow-up question on currently active and still-open summary
+        mode = 'page_followup';
+        pageContext = {
+          type: 'webpage',
+          content_type: effectiveSummaryData.contentType || 'html',
+          title: effectiveSummaryData.title || '',
+          url: effectiveSummaryData.sourceUrl || '',
+          text: effectiveSummaryData.fullText || effectiveSummaryData.summary || '',
+          truncated: Boolean(effectiveSummaryData.truncated),
+        };
+      } else if (isPageQuery) {
+        try {
+          const tabContent = await extractActivePageContent(activeTabInfo?.id);
+          if (tabContent && tabContent.text) {
+            mode = 'webpage';
+            pageContext = {
+              type: 'webpage',
+              content_type: tabContent.contentType || 'html',
+              title: tabContent.title || activeTabInfo?.title || '',
+              url: tabContent.url || activeTabUrl || '',
+              text: tabContent.text || '',
+              truncated: tabContent.truncated || false,
+            };
           }
-        : selectedContext;
+        } catch (err) {
+          console.warn('Failed to extract page context for chat query:', err);
+        }
+      }
 
       // Prepare conversation history (up to last 6 messages)
       const historyForApi = messages
@@ -346,7 +494,6 @@ export default function App() {
         const errorContent =
           accumulatedContent ||
           'Sorry, I encountered an issue connecting to the AI service. Please ensure the backend is running and your API key is configured.';
-        showToast(err.message || 'Error communicating with AI service');
 
         setMessages((prev) =>
           prev.map((msg) =>
@@ -371,13 +518,12 @@ export default function App() {
         onError,
       });
     },
-    [isSending, activeChatId, messages, summaryState, selectedContext, showToast]
+    [isSending, activeChatId, messages, summaryState, selectedContext]
   );
 
   const handleSignOut = useCallback(() => {
     setActivePage('home');
-    showToast('Signed out (Demo mode)');
-  }, [showToast]);
+  }, []);
 
   const handleSelectTool = useCallback(
     (tool) => {
@@ -386,9 +532,8 @@ export default function App() {
       } else if (tool?.title) {
         setComposerPlaceholderOverride(`Describe what you want Runable to build for ${tool.title}...`);
       }
-      showToast(`Selected tool: ${tool.title}`);
     },
-    [showToast]
+    []
   );
 
   // View state conditions
@@ -437,30 +582,29 @@ export default function App() {
 
       {/* Subpages routed from More Options */}
       {activePage === 'artifacts' && (
-        <ArtifactsPage onBack={handleBackToHome} showToast={showToast} />
+        <ArtifactsPage onBack={handleBackToHome} />
       )}
 
       {activePage === 'scheduled-tasks' && (
-        <ScheduledTasksPage onBack={handleBackToHome} showToast={showToast} />
+        <ScheduledTasksPage onBack={handleBackToHome} />
       )}
 
       {activePage === 'plugins' && (
-        <PluginsPage onBack={handleBackToHome} showToast={showToast} />
+        <PluginsPage onBack={handleBackToHome} />
       )}
 
       {activePage === 'notetaker' && (
-        <NotetakerPage onBack={handleBackToHome} showToast={showToast} onNavigate={setActivePage} />
+        <NotetakerPage onBack={handleBackToHome} onNavigate={setActivePage} />
       )}
 
       {activePage === 'settings' && (
-        <SettingsPage onBack={handleBackToHome} showToast={showToast} onNavigate={setActivePage} />
+        <SettingsPage onBack={handleBackToHome} onNavigate={setActivePage} />
       )}
 
       {activePage === 'account' && (
         <AccountPage
           onBack={handleBackToHome}
           onSignOut={handleSignOut}
-          showToast={showToast}
           onNavigate={setActivePage}
         />
       )}
@@ -474,7 +618,6 @@ export default function App() {
               <>
                 {/* Four quick action cards remain at top with Summarize active */}
                 <QuickActions
-                  onAction={showToast}
                   onSummarize={handleSummarizeThisPage}
                   activeAction="summarize"
                 />
@@ -491,23 +634,14 @@ export default function App() {
                   </>
                 )}
               </>
-            ) : isSelectionActive || hasMessages ? (
-              /* 2. Ask with Runable Selection Workflow (Phase 2) */
-              <>
-                {selectedContext && (
-                  <SelectedContextCard
-                    context={selectedContext}
-                    onClose={handleCloseSelectedContext}
-                  />
-                )}
-                <ConversationView messages={messages} />
-              </>
+            ) : hasMessages ? (
+              /* 2. Conversation Messages View */
+              <ConversationView messages={messages} />
             ) : (
               /* 3. Normal Phase 1 Welcome & Quick Actions */
               <>
                 <WelcomeSection />
                 <QuickActions
-                  onAction={showToast}
                   onSummarize={handleSummarizeThisPage}
                   onSelectTool={handleSelectTool}
                 />
@@ -515,18 +649,16 @@ export default function App() {
             )}
           </main>
 
-          {/* Bottom Chat Composer */}
+          {/* Bottom Chat Composer with integrated attachment support */}
           <ChatComposer
             onSendMessage={handleSendMessage}
-            showToast={showToast}
             onNavigate={setActivePage}
             placeholder={composerPlaceholder}
+            selectedContext={selectedContext}
+            onClearSelectedContext={handleCloseSelectedContext}
           />
         </>
       )}
-
-      {/* Floating Demo Toast */}
-      <Toast message={toast} />
     </div>
   );
 }

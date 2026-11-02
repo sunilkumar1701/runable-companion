@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, Search, PlusCircle, X, FileText, Presentation, LineChart } from 'lucide-react';
 import { sampleArtifacts } from '../data/menuPagesData';
 
-export default function ArtifactsPage({ onBack, showToast }) {
+export default function ArtifactsPage({ onBack }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All Artifacts');
   const [artifactsList, setArtifactsList] = useState([]);
@@ -20,7 +20,6 @@ export default function ArtifactsPage({ onBack, showToast }) {
       description: 'Auto-generated presentation deck from your active workspace discussion.',
     };
     setArtifactsList([newArt, ...artifactsList]);
-    if (showToast) showToast('Sample artifact created (Demo)');
   };
 
   const filteredArtifacts = artifactsList.filter((art) => {

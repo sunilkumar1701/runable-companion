@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { openShortcutSettings } from '../services/browserApi';
 
-export default function SettingsPage({ onBack, showToast, onNavigate }) {
+export default function SettingsPage({ onBack, onNavigate }) {
   const [selectedRow, setSelectedRow] = useState('account');
 
   const handleRowClick = (id) => {
@@ -29,14 +29,11 @@ export default function SettingsPage({ onBack, showToast, onNavigate }) {
       onNavigate('plugins');
     } else if (id === 'notetaker' && onNavigate) {
       onNavigate('notetaker');
-    } else {
-      if (showToast) showToast(`${id} — demo placeholder`);
     }
   };
 
   const handleOpenShortcuts = () => {
     openShortcutSettings();
-    if (showToast) showToast('Opening browser shortcut configuration...');
   };
 
   return (

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { FileText } from 'lucide-react';
 import './ConversationView.css';
 
 /**
@@ -96,6 +97,30 @@ export default function ConversationView({ messages }) {
             return (
               <div key={msg.id} className="conversation-row conversation-row--user">
                 <div className="conversation-bubble conversation-bubble--user">
+                  {msg.attachmentContext && msg.attachmentContext.selectedText && (
+                    <div className="conversation-attachment-chip">
+                      <div className="conversation-attachment-chip-header">
+                        <FileText size={12} />
+                        <span>Selected text</span>
+                        {msg.attachmentContext.pageUrl && (
+                          <span className="conversation-attachment-chip-domain">
+                            • {(() => {
+                              try {
+                                return new URL(msg.attachmentContext.pageUrl).hostname;
+                              } catch (_) {
+                                return '';
+                              }
+                            })()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="conversation-attachment-chip-body">
+                        "{msg.attachmentContext.selectedText.length > 140
+                          ? msg.attachmentContext.selectedText.slice(0, 140) + '…'
+                          : msg.attachmentContext.selectedText}"
+                      </div>
+                    </div>
+                  )}
                   <div className="conversation-text">{msg.content}</div>
                 </div>
                 <div className="conversation-avatar conversation-avatar--user" aria-hidden="true">
